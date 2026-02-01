@@ -44,7 +44,7 @@
         const LEAGUES = 'PL,PD,SA,BL1,FL1,CL'; 
 
         // Прокси для обхода CORS (чтобы API работало в браузере)
-        const PROXY_URL = 'https://corsproxy.io/?'; 
+        const PROXY_URL = 'https://api.allorigins.win/raw?url='; 
         const API_URL = `https://api.football-data.org/v4/matches?competitions=${LEAGUES}`;
 
         // --- ЛОГИКА ---
@@ -201,4 +201,5 @@
         init();
     </script>
 </body>
+
 </html>
