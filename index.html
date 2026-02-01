@@ -9,7 +9,7 @@
         h1 { color: #00ff88; text-align: center; margin-bottom: 30px; }
         .loading { text-align: center; font-size: 1.2em; color: #888; }
         
-        .alert { background: #ff4444; color: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; }
+        .alert { background: #ff4444; color: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; word-wrap: break-word;}
         
         .match-card {
             background: #1e1e1e; border: 1px solid #333; border-radius: 12px;
@@ -39,13 +39,14 @@
 
     <script>
         // --- НАСТРОЙКИ ---
-        const API_KEY = '6b86c33cb76a4ed58d581bda6df30151'; // Твой ключ
-        const PLAYLIST_FILE = 'playlist.m3u'; // Файл должен лежать рядом с index.html на GitHub
+        const API_KEY = '6b86c33cb76a4ed58d581bda6df30151'; 
+        const PLAYLIST_FILE = 'playlist.m3u'; 
         const LEAGUES = 'PL,PD,SA,BL1,FL1,CL'; 
 
-        // Прокси для обхода CORS (чтобы API работало в браузере)
+        // ИЗМЕНЕНИЕ: Используем другой, более надежный прокси
         const PROXY_URL = 'https://api.allorigins.win/raw?url='; 
-        const API_URL = `https://api.football-data.org/v4/matches?competitions=${LEAGUES}`;
+        
+        const API_BASE = 'https://api.football-data.org/v4/matches';
 
         // --- ЛОГИКА ---
 
@@ -54,25 +55,32 @@
             const errorBox = document.getElementById('error-box');
 
             try {
-                // 1. Загружаем данные ПАРАЛЛЕЛЬНО (Матчи + Плейлист)
-                const [matchesData, playlistText] = await Promise.all([
-                    fetchMatches(),
-                    fetchPlaylist()
-                ]);
+                // 1. Загружаем данные
+                console.log("Начинаем загрузку...");
+                
+                // Сначала пробуем загрузить матчи
+                let matchesData;
+                try {
+                    matchesData = await fetchMatches();
+                } catch (e) {
+                    throw new Error(`Ошибка загрузки матчей (API): ${e.message}`);
+                }
 
-                // 2. Парсим плейлист
+                // Потом плейлист (он не критичен, если упадет - просто не будет кнопок)
+                const playlistText = await fetchPlaylist();
+                
+                // 2. Парсим
                 const channels = parsePlaylist(playlistText);
                 console.log(`Загружено каналов: ${channels.length}`);
 
-                // 3. Обрабатываем матчи
-                container.innerHTML = ''; // Очистить "Загрузку"
+                // 3. Рисуем
+                container.innerHTML = ''; 
                 
-                if (matchesData.matches.length === 0) {
+                if (!matchesData.matches || matchesData.matches.length === 0) {
                     container.innerHTML = '<div style="text-align:center">Матчей на ближайшие 48 часов не найдено.</div>';
                     return;
                 }
 
-                // Сортируем по времени
                 matchesData.matches.sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
 
                 matchesData.matches.forEach(match => {
@@ -83,31 +91,42 @@
                 console.error(err);
                 container.innerHTML = '';
                 errorBox.style.display = 'block';
-                errorBox.innerHTML = `⚠️ Ошибка: ${err.message}<br>Проверь консоль браузера (F12) для деталей.`;
+                errorBox.innerHTML = `⚠️ <b>Произошла ошибка:</b><br>${err.message}<br><br>Попробуй обновить страницу через минуту.`;
             }
         }
 
         async function fetchMatches() {
-            // Берем матчи на сегодня и завтра
             const dateFrom = new Date().toISOString().split('T')[0];
             const dateTo = new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0];
             
-            const url = `${PROXY_URL}${encodeURIComponent(API_URL + `&dateFrom=${dateFrom}&dateTo=${dateTo}`)}`;
+            // Собираем ссылку для прокси
+            const targetUrl = `${API_BASE}?competitions=${LEAGUES}&dateFrom=${dateFrom}&dateTo=${dateTo}`;
+            const finalUrl = `${PROXY_URL}${encodeURIComponent(targetUrl)}`;
             
-            const response = await fetch(url, {
+            console.log("Запрос к API:", finalUrl);
+
+            const response = await fetch(finalUrl, {
                 headers: { 'X-Auth-Token': API_KEY }
             });
-            if (!response.ok) throw new Error('Ошибка связи с Football API');
+            
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`Статус ${response.status}: ${text.slice(0, 100)}`);
+            }
             return await response.json();
         }
 
         async function fetchPlaylist() {
             try {
-                const response = await fetch(PLAYLIST_FILE);
-                if (!response.ok) return null; // Если файла нет
+                // Добавляем timestamp, чтобы браузер не кешировал старый файл
+                const response = await fetch(`${PLAYLIST_FILE}?t=${Date.now()}`);
+                if (!response.ok) {
+                    console.warn("Плейлист не найден (404)");
+                    return null;
+                }
                 return await response.text();
             } catch (e) {
-                console.warn("Плейлист не найден или ошибка загрузки");
+                console.warn("Ошибка загрузки плейлиста:", e);
                 return null;
             }
         }
@@ -134,28 +153,17 @@
             return channels;
         }
 
-        // Простая функция "нечеткого поиска" на JS
         function findLink(home, away, channels) {
             if (!channels.length) return null;
 
-            const query = [
-                `${home} ${away}`.toLowerCase(),
-                `${home} vs ${away}`.toLowerCase(),
-                `${away} ${home}`.toLowerCase()
-            ];
-
-            // Разбиваем названия команд на слова для лучшего поиска
-            // Например "Man United" -> ["man", "united"]
-            const homeWords = home.toLowerCase().split(' ');
-            const awayWords = away.toLowerCase().split(' ');
+            const homeWords = home.toLowerCase().split(' ').filter(w => w.length > 2);
+            const awayWords = away.toLowerCase().split(' ').filter(w => w.length > 2);
 
             for (let ch of channels) {
                 const chName = ch.name.toLowerCase();
-                
-                // Проверяем: есть ли в названии канала ХОТЯ БЫ одно слово от хозяев И одно слово от гостей
-                // Это примитивный, но эффективный аналог Python fuzzy search
-                const hasHome = homeWords.some(w => w.length > 2 && chName.includes(w));
-                const hasAway = awayWords.some(w => w.length > 2 && chName.includes(w));
+                // Ищем совпадение хотя бы по одному слову от каждой команды
+                const hasHome = homeWords.some(w => chName.includes(w));
+                const hasAway = awayWords.some(w => chName.includes(w));
 
                 if (hasHome && hasAway) {
                     return `http://127.0.0.1:6878/ace/getstream?id=${ch.id}`;
@@ -171,10 +179,7 @@
             
             const home = match.homeTeam.name;
             const away = match.awayTeam.name;
-            
-            // Ищем ссылку
             const aceLink = findLink(home, away, channels);
-            
             const isLive = match.status === 'IN_PLAY' || match.status === 'PAUSED';
 
             const div = document.createElement('div');
@@ -197,9 +202,7 @@
             container.appendChild(div);
         }
 
-        // Запуск
         init();
     </script>
 </body>
-
 </html>
