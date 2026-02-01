@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football TV Hub</title>
+    <style>
+        body { background-color: #121212; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        h1 { color: #00ff88; text-align: center; margin-bottom: 30px; }
+        .loading { text-align: center; font-size: 1.2em; color: #888; }
+        
+        .alert { background: #ff4444; color: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: none; }
+        
+        .match-card {
+            background: #1e1e1e; border: 1px solid #333; border-radius: 12px;
+            padding: 20px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 15px;
+        }
+        .match-info { flex: 1; min-width: 200px; }
+        .teams { font-size: 1.2em; font-weight: bold; margin-bottom: 5px; color: #fff; }
+        .meta { color: #888; font-size: 0.9em; }
+        .league-badge { background: #333; padding: 2px 8px; border-radius: 4px; font-size: 0.8em; margin-right: 5px; border: 1px solid #444;}
+        .live-dot { color: #ff4444; font-weight: bold; animation: pulse 1.5s infinite; }
+
+        .btn { text-decoration: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; display: inline-block; text-align: center; cursor: pointer; border: none; font-size: 0.9em;}
+        .btn-play { background-color: #00ff88; color: #000; box-shadow: 0 0 10px rgba(0,255,136,0.2); }
+        .btn-play:hover { background-color: #00cc6a; }
+        .btn-search { background-color: #2c2c2c; color: #ccc; border: 1px solid #444; }
+        .btn-search:hover { background-color: #3c3c3c; color: #fff; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <h1>⚽ Football TV Hub</h1>
+    <div id="error-box" class="alert"></div>
+    <div id="matches-container" class="loading">Загрузка матчей и плейлиста...</div>
+
+    <script>
+        // --- НАСТРОЙКИ ---
+        const API_KEY = '6b86c33cb76a4ed58d581bda6df30151'; // Твой ключ
+        const PLAYLIST_FILE = 'playlist.m3u'; // Файл должен лежать рядом с index.html на GitHub
+        const LEAGUES = 'PL,PD,SA,BL1,FL1,CL'; 
+
+        // Прокси для обхода CORS (чтобы API работало в браузере)
+        const PROXY_URL = 'https://corsproxy.io/?'; 
+        const API_URL = `https://api.football-data.org/v4/matches?competitions=${LEAGUES}`;
+
+        // --- ЛОГИКА ---
+
+        async function init() {
+            const container = document.getElementById('matches-container');
+            const errorBox = document.getElementById('error-box');
+
+            try {
+                // 1. Загружаем данные ПАРАЛЛЕЛЬНО (Матчи + Плейлист)
+                const [matchesData, playlistText] = await Promise.all([
+                    fetchMatches(),
+                    fetchPlaylist()
+                ]);
+
+                // 2. Парсим плейлист
+                const channels = parsePlaylist(playlistText);
+                console.log(`Загружено каналов: ${channels.length}`);
+
+                // 3. Обрабатываем матчи
+                container.innerHTML = ''; // Очистить "Загрузку"
+                
+                if (matchesData.matches.length === 0) {
+                    container.innerHTML = '<div style="text-align:center">Матчей на ближайшие 48 часов не найдено.</div>';
+                    return;
+                }
+
+                // Сортируем по времени
+                matchesData.matches.sort((a, b) => new Date(a.utcDate) - new Date(b.utcDate));
+
+                matchesData.matches.forEach(match => {
+                    renderMatch(match, channels, container);
+                });
+
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = '';
+                errorBox.style.display = 'block';
+                errorBox.innerHTML = `⚠️ Ошибка: ${err.message}<br>Проверь консоль браузера (F12) для деталей.`;
+            }
+        }
+
+        async function fetchMatches() {
+            // Берем матчи на сегодня и завтра
+            const dateFrom = new Date().toISOString().split('T')[0];
+            const dateTo = new Date(Date.now() + 2 * 86400000).toISOString().split('T')[0];
+            
+            const url = `${PROXY_URL}${encodeURIComponent(API_URL + `&dateFrom=${dateFrom}&dateTo=${dateTo}`)}`;
+            
+            const response = await fetch(url, {
+                headers: { 'X-Auth-Token': API_KEY }
+            });
+            if (!response.ok) throw new Error('Ошибка связи с Football API');
+            return await response.json();
+        }
+
+        async function fetchPlaylist() {
+            try {
+                const response = await fetch(PLAYLIST_FILE);
+                if (!response.ok) return null; // Если файла нет
+                return await response.text();
+            } catch (e) {
+                console.warn("Плейлист не найден или ошибка загрузки");
+                return null;
+            }
+        }
+
+        function parsePlaylist(text) {
+            if (!text) return [];
+            const lines = text.split('\n');
+            const channels = [];
+            let currentTitle = null;
+
+            lines.forEach(line => {
+                line = line.trim();
+                if (line.startsWith('#EXTINF:')) {
+                    const parts = line.split(',');
+                    if (parts.length > 1) currentTitle = parts.slice(1).join(',').trim();
+                } else if (line.startsWith('acestream://') && currentTitle) {
+                    channels.push({
+                        name: currentTitle,
+                        id: line.replace('acestream://', '')
+                    });
+                    currentTitle = null;
+                }
+            });
+            return channels;
+        }
+
+        // Простая функция "нечеткого поиска" на JS
+        function findLink(home, away, channels) {
+            if (!channels.length) return null;
+
+            const query = [
+                `${home} ${away}`.toLowerCase(),
+                `${home} vs ${away}`.toLowerCase(),
+                `${away} ${home}`.toLowerCase()
+            ];
+
+            // Разбиваем названия команд на слова для лучшего поиска
+            // Например "Man United" -> ["man", "united"]
+            const homeWords = home.toLowerCase().split(' ');
+            const awayWords = away.toLowerCase().split(' ');
+
+            for (let ch of channels) {
+                const chName = ch.name.toLowerCase();
+                
+                // Проверяем: есть ли в названии канала ХОТЯ БЫ одно слово от хозяев И одно слово от гостей
+                // Это примитивный, но эффективный аналог Python fuzzy search
+                const hasHome = homeWords.some(w => w.length > 2 && chName.includes(w));
+                const hasAway = awayWords.some(w => w.length > 2 && chName.includes(w));
+
+                if (hasHome && hasAway) {
+                    return `http://127.0.0.1:6878/ace/getstream?id=${ch.id}`;
+                }
+            }
+            return null;
+        }
+
+        function renderMatch(match, channels, container) {
+            const date = new Date(match.utcDate);
+            const timeStr = date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
+            const dateStr = date.toLocaleDateString('ru-RU', {day: 'numeric', month: 'short'});
+            
+            const home = match.homeTeam.name;
+            const away = match.awayTeam.name;
+            
+            // Ищем ссылку
+            const aceLink = findLink(home, away, channels);
+            
+            const isLive = match.status === 'IN_PLAY' || match.status === 'PAUSED';
+
+            const div = document.createElement('div');
+            div.className = 'match-card';
+            div.innerHTML = `
+                <div class="match-info">
+                    <div class="meta">
+                        <span class="league-badge">${match.competition.name}</span>
+                        ${isLive ? '<span class="live-dot">● LIVE</span>' : `${dateStr} в ${timeStr}`}
+                    </div>
+                    <div class="teams">${home} — ${away}</div>
+                </div>
+                <div>
+                    ${aceLink 
+                        ? `<a href="${aceLink}" class="btn btn-play">▶ Смотреть</a>`
+                        : `<a href="https://www.google.com/search?q=site:search-ace.stream+${home}+${away}" target="_blank" class="btn btn-search">🔍 Найти ID</a>`
+                    }
+                </div>
+            `;
+            container.appendChild(div);
+        }
+
+        // Запуск
+        init();
+    </script>
+</body>
+</html>
