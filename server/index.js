@@ -216,6 +216,7 @@ app.get('/api/overview', (req, res) => {
     scorers,
     competitions,
     sources: allMeta(),
+    refresh: refreshState(),
   });
 });
 

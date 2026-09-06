@@ -63,8 +63,39 @@ function score(stem, candidate) {
 
 /** Явные соответствия там, где имя файла и название клуба расходятся. */
 const OVERRIDES = {
-  paris: 'paris-saint-germain',   // paris.png — это ПСЖ, а не «Париж»
+  paris: 'paris-saint-germain',       // paris.png — это ПСЖ, а не «Париж»
+  manunited: 'manchester-united',
+  mancity: 'manchester-city',
+  hull: 'hull-city',
+  atletico: 'atl-tico-madrid',
+  betis: 'real-betis',
+  villareal: 'villarreal',
+  malaga: 'm-laga',
+  rayo: 'rayo-vallecano',
+  almeria: 'almer-a',
+  lyon: 'olympique-lyonnais',
+  saintetienne: 'saint-tienne',
+  hellasverona: 'hellas-verona',
+  mgladbach: 'borussia-m-nchengladbach',
+  aue: 'erzgebirge-aue',
+  atletico: 'atl-tico',
+  nice: 'ogc-nice',
+  reims: 'stade-reims',
+  braga: 'sporting-braga',
 };
+
+/**
+ * Коды стран в именах папок и в турнирах openfootball местами расходятся:
+ * папка `sc-scottland`, а турнир — `sco.1`. (Проверено по списку кодов в базе:
+ * Германия — `de` в обоих местах, Уэльса в турнирах нет вовсе.)
+ */
+const COUNTRY_CODE_ALIAS = { sc: 'sco' };
+
+/**
+ * В немецкой части репозитория файлы названы с номером дивизиона:
+ * `i-bayern.png` — Бундеслига, `ii-bochum.png` — вторая. Префикс срезаем.
+ */
+const DIVISION_PREFIX = /^(i{1,3})-/;
 
 /** Эмблемы клубов, которых в базе нет (не сопоставляем ни с кем). */
 const SKIP = new Set(['moskva']); // FC Moskva расформирован, CSKA — другой клуб
@@ -84,7 +115,7 @@ export function listCrests(srcDir) {
       for (const file of fs.readdirSync(dirPath)) {
         if (!file.endsWith('.png')) continue;
         out.push({
-          stem: ALNUM(file.replace(/\.png$/, '')),
+          stem: ALNUM(file.replace(/\.png$/, '').replace(DIVISION_PREFIX, '')),
           file,
           country: country.name,
           continent: continent.name,
@@ -131,8 +162,10 @@ export function ingestCrests({
                SELECT away_team_id, competition_id FROM matches) m`,
     )
     .all()) {
-    const code = String(row.competition_id).split(':')[1]?.split('.')[0];
-    if (!code) continue;
+    const raw = String(row.competition_id).split(':')[1]?.split('.')[0];
+    // у StatsBomb турниры нумерованные (`statsbomb:9`) — страны из них не вывести
+    if (!raw || !/^[a-z]{2,3}$/.test(raw)) continue;
+    const code = raw;
     if (!countryByTeam.has(row.team_id)) countryByTeam.set(row.team_id, new Set());
     countryByTeam.get(row.team_id).add(code);
   }
@@ -140,16 +173,19 @@ export function ingestCrests({
   let matched = 0;
   let copied = 0;
   const misses = [];
+  const taken = new Set();
 
-  for (const crest of crests) {
+  const ordered = [...crests].sort((a, b) => b.stem.length - a.stem.length || a.file.localeCompare(b.file));
+  for (const crest of ordered) {
     if (SKIP.has(crest.stem)) {
       misses.push(crest.file);
       continue;
     }
-    const crestCountry = crest.country.split('-')[0];
+    const crestCountry = COUNTRY_CODE_ALIAS[crest.country.split('-')[0]] || crest.country.split('-')[0];
     let best = null;
     const forced = OVERRIDES[crest.stem];
     for (const team of teams) {
+      if (taken.has(team.id)) continue; // одна эмблема — одному клубу
       const known = countryByTeam.get(team.id);
       if (known?.size && !known.has(crestCountry)) continue; // не та страна
       for (const cand of keysByTeam.get(team.id) || []) {
@@ -167,12 +203,41 @@ export function ingestCrests({
     copied += 1;
     const url = `/crests/${crest.country}/${crest.file}`;
     insert.run(url, best.team.id);
+    taken.add(best.team.id);
     matched += 1;
   }
 
   // Клуб в базе бывает дважды — `arsenal` и `arsenal-eng` (openfootball и
   // openfootball/europe дают разные ключи). Раздаём эмблему обоим вариантам,
   // иначе у части матчей логотипа не будет.
+  // Второй проход: openfootball хранит один клуб под разными ключами
+  // (`real` и `real-madrid-esp`, `atl-tico` и `atl-tico-madrid-esp`). Если имена
+  // совпадают с точностью до хвоста «(ESP)», эмблема достаётся обоим.
+  const canon = (name) => ALNUM(String(name || '').replace(/\s*\([A-Za-z]{2,4}\)\s*$/, ''));
+  const groups = new Map();
+  for (const t of teams) {
+    const key = canon(t.name);
+    if (!key) continue;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(t.id);
+  }
+  const crestOf = new Map(
+    db.prepare("SELECT id, crest_url FROM teams WHERE crest_url IS NOT NULL AND crest_url <> ''")
+      .all()
+      .map((r) => [r.id, r.crest_url]),
+  );
+  let byName = 0;
+  for (const ids of groups.values()) {
+    const donor = ids.map((id) => crestOf.get(id)).find(Boolean);
+    if (!donor) continue;
+    for (const id of ids) {
+      if (crestOf.has(id)) continue;
+      insert.run(donor, id);
+      crestOf.set(id, donor);
+      byName += 1;
+    }
+  }
+
   const withCrest = db
     .prepare("SELECT id, crest_url FROM teams WHERE crest_url IS NOT NULL AND crest_url <> ''")
     .all();
@@ -193,7 +258,7 @@ export function ingestCrests({
   const total = db
     .prepare("SELECT COUNT(*) AS n FROM teams WHERE crest_url IS NOT NULL AND crest_url <> ''")
     .get().n;
-  log(`  эмблемы: ${copied} файлов, сопоставлено ${matched}, продублировано на ${propagated} двойников, всего команд с эмблемой ${total}`);
+  log(`  эмблемы: ${copied} файлов, сопоставлено ${matched}, по суффиксу страны +${propagated}, по совпадению имён +${byName}, всего команд с эмблемой ${total}`);
   if (misses.length) log(`  эмблемы без пары (${misses.length}): ${misses.slice(0, 12).join(', ')}${misses.length > 12 ? '…' : ''}`);
   setMetaCrests(copied, matched);
   return { copied, matched, total, propagated, misses };
