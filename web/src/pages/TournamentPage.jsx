@@ -37,7 +37,7 @@ export default function TournamentPage() {
           <div className="chips" style={{ marginTop: 20 }}>
             {data.seasons.slice(0, 12).map((s) => (
               <button key={s.id} className={`chip ${activeSeason === s.id ? 'active' : ''}`} onClick={() => setSeason(s.id)}>
-                {s.label_ru ? s.label_ru.replace(/ .*/, '') : s.name}
+                {s.name}
               </button>
             ))}
           </div>

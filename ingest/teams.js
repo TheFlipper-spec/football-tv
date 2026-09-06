@@ -329,6 +329,22 @@ export const TEAM_ALIASES = {
   'orenburg': 'fk-orenburg',
   'khimki': 'fk-khimki',
   'rubin': 'rubin-kazan',
+  // Названия из ESPN Site API → те же клубы
+  'gazovik-orenburg': 'fk-orenburg',
+  'lokomotiv-moscow': 'lokomotiv-moskva',
+  'cska-moscow': 'cska-moskva',
+  'spartak-moscow': 'spartak-moskva',
+  'dinamo-moscow': 'dinamo-moskva',
+  'fc-rostov': 'fk-rostov',
+  'fc-krasnodar': 'fk-krasnodar',
+  'fc-sochi': 'sochi',
+  'fc-nizhny-novgorod': 'fk-nizhny-novgorod',
+  'fc-baltika-kaliningrad': 'baltika-kaliningrad',
+  'baltika': 'baltika-kaliningrad',
+  'fc-akhmat-grozny': 'akhmat-grozny',
+  'fc-rubin-kazan': 'rubin-kazan',
+  'fc-pari-nn': 'fk-nizhny-novgorod',
+  'fk-rodina': 'rodina',
 };
 
 export function resolveTeamKey(name) {

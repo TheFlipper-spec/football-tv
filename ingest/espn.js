@@ -6,6 +6,8 @@
  * Требует исходящего интернета; если его нет — инжест пропускает шаг,
  * а сайт показывает данные из базы (реальные, но на момент последнего снимка).
  */
+import fs from 'node:fs';
+import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { getDb, setMeta } from '../server/db.js';
 import { upsertTeam } from './teams.js';
@@ -100,6 +102,14 @@ function upsertEvent(ev, league) {
   const existing = findExistingMatch(homeId, awayId, kickoffUtc);
   const id = existing || espnId;
 
+  // сезон создаём до матча — на него ссылается внешний ключ
+  const seasonId = `${SOURCE}:${league.slug}:${new Date(kickoffUtc).getFullYear()}`;
+  const competitionId = ensureCompetition(league);
+  db.prepare(
+    `INSERT INTO seasons (id, competition_id, name, source) VALUES (?, ?, ?, ?)
+     ON CONFLICT(id) DO NOTHING`,
+  ).run(seasonId, competitionId, String(new Date(kickoffUtc).getFullYear()), SOURCE);
+
   db.prepare(
     `INSERT INTO matches (
        id, competition_id, season_id, round, kickoff_utc, timezone, status, minute,
@@ -116,8 +126,8 @@ function upsertEvent(ev, league) {
        updated_at = excluded.updated_at`,
   ).run(
     id,
-    ensureCompetition(league),
-    `${SOURCE}:${league.slug}:${new Date(kickoffUtc).getFullYear()}`,
+    competitionId,
+    seasonId,
     comp.groupings?.[0]?.groupings?.[0]?.description || null,
     kickoffUtc, league.tz, status, minute,
     homeId, awayId,
@@ -132,30 +142,64 @@ function upsertEvent(ev, league) {
     new Date().toISOString(),
   );
 
-  if (!existing) {
-    db.prepare(
-      `INSERT INTO seasons (id, competition_id, name, source) VALUES (?, ?, ?, ?)
-       ON CONFLICT(id) DO NOTHING`,
-    ).run(`${SOURCE}:${league.slug}:${new Date(kickoffUtc).getFullYear()}`, ensureCompetition(league), String(new Date(kickoffUtc).getFullYear()), SOURCE);
-  }
   return id;
 }
 
-export function ingestEspn({ log = console.log, leagues = ESPN_LEAGUES } = {}) {
+function snapshotPath(snapshotsDir, slug) {
+  const files = fs
+    .readdirSync(snapshotsDir)
+    .filter((f) => f.startsWith(`espn-${slug}-`) && f.endsWith('.json'))
+    .sort();
+  return files.length ? path.join(snapshotsDir, files[files.length - 1]) : null;
+}
+
+export function ingestEspn({ log = console.log, leagues = ESPN_LEAGUES, snapshotsDir = null, live = true } = {}) {
   const db = getDb();
   let updated = 0;
+  let mode = 'none';
   for (const league of leagues) {
-    try {
-      const data = getJson(`${BASE}/${league.slug}/scoreboard`);
-      for (const ev of data.events || []) {
-        if (upsertEvent(ev, league)) updated += 1;
+    let data = null;
+    if (live) {
+      try {
+        data = getJson(`${BASE}/${league.slug}/scoreboard`);
+        mode = 'live';
+        if (snapshotsDir) {
+          fs.mkdirSync(snapshotsDir, { recursive: true });
+          fs.writeFileSync(
+            path.join(snapshotsDir, `espn-${league.slug}-${new Date().toISOString().slice(0, 10)}.json`),
+            JSON.stringify(
+              {
+                captured_at: new Date().toISOString(),
+                league: league.slug,
+                league_name: league.name,
+                source_url: `${BASE}/${league.slug}/scoreboard`,
+                events: data.events || [],
+              },
+              null,
+              2,
+            ),
+          );
+        }
+      } catch (err) {
+        log(`  ESPN ${league.slug}: сеть недоступна (${err.message.split('\n')[0]})`);
       }
-    } catch (err) {
-      log(`  ESPN ${league.slug}: недоступен (${err.message.split('\n')[0]}) — пропускаю`);
+    }
+    if (!data && snapshotsDir && fs.existsSync(snapshotsDir)) {
+      const file = snapshotPath(snapshotsDir, league.slug);
+      if (file) {
+        data = JSON.parse(fs.readFileSync(file, 'utf8'));
+        mode = 'snapshot';
+        log(`  ESPN ${league.slug}: беру снимок ${path.basename(file)}`);
+      }
+    }
+    if (!data) continue;
+    for (const ev of data.events || []) {
+      if (upsertEvent(ev, league)) updated += 1;
     }
   }
   setMeta('ingest.espn', new Date().toISOString());
-  const live = db.prepare("SELECT COUNT(*) AS n FROM matches WHERE status = 'live'").get().n;
-  log(`  ESPN: обновлено ${updated} матчей, в эфире ${live}`);
-  return { updated, live };
+  setMeta('ingest.espn.mode', mode);
+  const liveCount = db.prepare("SELECT COUNT(*) AS n FROM matches WHERE status = 'live'").get().n;
+  log(`  ESPN: обновлено ${updated} матчей (${mode}), в эфире ${liveCount}`);
+  return { updated, live: liveCount, mode };
 }

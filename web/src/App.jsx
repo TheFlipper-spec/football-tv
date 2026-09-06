@@ -73,8 +73,10 @@ function Shell() {
           <div className="topbar-meta">
             {overview ? (
               <>
-                <b>{overview.matches_count ?? ''}</b>
-                <div>{liveCount} в эфире · {overview.streams?.length || 0} потоков</div>
+                <div>
+                  <b>{liveCount}</b> в эфире · <b>{overview.streams?.length || 0}</b> потоков
+                </div>
+                <div>{new Date(overview.now).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} · VK Видео Live / OK Видео</div>
               </>
             ) : (
               <div>загрузка…</div>

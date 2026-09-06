@@ -126,7 +126,7 @@ try {
 
   if (!only || only === 'espn') {
     step('ESPN live (текущий счёт и минута)');
-    ingestEspn({ log });
+    ingestEspn({ log, snapshotsDir: SNAPSHOTS, live: !noLive });
     rebuildMatchStreams({ log });
   }
 
