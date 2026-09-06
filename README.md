@@ -28,7 +28,9 @@ npm run dev          # Vite на :5173, проксирует /api → 127.0.0.1:
 Тесты:
 
 ```bash
-npm test             # 20 тестов на node:test
+npm test             # 20 юнит-тестов на node:test
+npm run test:smoke   # монтирует настоящее приложение в jsdom и проходит все 9 маршрутов
+                     # (нужен запущенный `npm start`)
 ```
 
 ---

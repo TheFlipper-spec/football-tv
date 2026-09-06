@@ -16,13 +16,15 @@
     "build": "vite build",
     "start": "node --disable-warning=ExperimentalWarning server/index.js",
     "dev": "vite --config vite.config.js",
-    "test": "node --test tests/*.test.js"
+    "test": "node --test tests/*.test.js",
+    "test:smoke": "esbuild scripts/smoke.jsx --bundle --platform=node --format=esm --jsx=automatic --outfile=.cache/smoke.mjs --log-level=error --external:react --external:react-dom --external:react-router-dom --external:jsdom && node .cache/smoke.mjs"
   },
   "dependencies": {
     "express": "^4.21.2"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^26.1.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.0",
