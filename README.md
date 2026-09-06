@@ -1,23 +1,14 @@
-<div align="center">
-
-<img src="web/public/crests/en-england/everton.png" width="64" alt="" />
-
 # ⚽ ФУТБОЛ.TV
 
-**Матчи · составы · статистика · прямые трансляции**
-<br />
-Только реальные данные из открытых источников — ни одной заглушки.
+### [🌐 Открыть сайт →](https://theflipper-spec.github.io/football-tv/)
 
-<br />
-
-[![🌐 Открыть сайт](https://img.shields.io/badge/🌐%20Открыть%20сайт-1a7f37?style=for-the-badge&logo=googlechrome&logoColor=white)](https://theflipper-spec.github.io/football-tv/)
+**Матчи · составы · статистика · прямые трансляции** — только реальные данные
+из открытых источников, ни одной заглушки.
 
 [![матчей в базе](https://img.shields.io/badge/матчей-115_066-0b6bcb?style=flat-square)](#откуда-берутся-данные)
 [![турниров](https://img.shields.io/badge/турниров-86-0b6bcb?style=flat-square)](#откуда-берутся-данные)
-[![эфиров](https://img.shields.io/badge/эфиров%20VK%2FOK-27-ff4b44?style=flat-square)](#откуда-берутся-данные)
+[![эфиров VK/OK](https://img.shields.io/badge/эфиров-27-ff4b44?style=flat-square)](#откуда-берутся-данные)
 [![тесты](https://img.shields.io/badge/тесты-20%2F20-1a7f37?style=flat-square)](#проверки)
-
-</div>
 
 ---
 
