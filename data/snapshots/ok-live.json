@@ -1,0 +1,45 @@
+{
+  "captured_at": "2026-09-06T13:06:00.000Z",
+  "captured_via": "agent web tools (fetch_page) — прямое HTTP-соединение из песочницы заблокировано",
+  "platform": "ok",
+  "source_url": "https://ok.ru/video/live",
+  "category": "ТВ-каналы, прямой эфир",
+  "note": "Постоянные круглосуточные эфиры телеканалов в OK Видео. Матчевых трансляций в открытом списке OK на момент снимка не было.",
+  "streams": [
+    {
+      "title": "Первый канал. Прямой эфир",
+      "channel": "Первый канал",
+      "url": "https://ok.ru/video/1115050286838",
+      "viewers": 0,
+      "is_live": 1
+    },
+    {
+      "title": "Прямая трансляция Москва 24",
+      "channel": "Москва 24",
+      "url": "https://ok.ru/video/216342154",
+      "viewers": 0,
+      "is_live": 1
+    },
+    {
+      "title": "МИР24 — прямой эфир",
+      "channel": "МИР24",
+      "url": "https://ok.ru/video/73364",
+      "viewers": 0,
+      "is_live": 1
+    },
+    {
+      "title": "Губерния. Прямой эфир",
+      "channel": "Губерния",
+      "url": "https://ok.ru/video/1493804719698",
+      "viewers": 0,
+      "is_live": 1
+    },
+    {
+      "title": "Главные новости России и мира сегодня. Прямой эфир РБК",
+      "channel": "РБК",
+      "url": "https://ok.ru/video/301694721777",
+      "viewers": 0,
+      "is_live": 1
+    }
+  ]
+}

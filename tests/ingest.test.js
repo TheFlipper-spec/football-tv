@@ -1,0 +1,116 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { parseOpenfootballText } from '../ingest/openfootball.js';
+import { aggregateEvents } from '../ingest/statsbomb.js';
+import { parseVkLiveHtml } from '../ingest/streams.js';
+import { zonedToUtcIso, deriveStatus } from '../lib/time.js';
+
+const RPL_TXT = `= Russia Premier League 2024/25
+
+# Date       Sat Jul 20 2024 - Sat May 24 2025 (308d)
+# Teams      16
+
+▪ Matchday 1
+  Sat Jul 20 2024
+    15:00  Lokomotiv Moskva        v Akron Tolyatti           3-2 (2-2)
+    17:30  Krylia Sovetov          v Zenit St. Petersburg     0-4 (0-3)
+    20:00  FK Rostov               v CSKA Moskva              0-0
+  Sun Jul 21
+    17:30  FK Orenburg             v Spartak Moskva           2-0 (0-0)
+
+▪ Matchday 2
+  Fri Jul 26
+    18:00  Krylia Sovetov          v FK Rostov                1-3 (0-1)
+`;
+
+test('парсер openfootball читает тур, дату, время, счёт и счёт перерыва', () => {
+  const rows = parseOpenfootballText(RPL_TXT);
+  assert.equal(rows.length, 5);
+  assert.deepEqual(rows[0], {
+    round: 'Matchday 1',
+    date: '2024-07-20',
+    time: '15:00',
+    team1: 'Lokomotiv Moskva',
+    team2: 'Akron Tolyatti',
+    score: { ft: [3, 2], ht: [2, 2] },
+  });
+  assert.equal(rows[3].date, '2024-07-21');
+  assert.equal(rows[4].round, 'Matchday 2');
+});
+
+test('местное время матча корректно переводится в UTC', () => {
+  // 20:00 по Москве = 17:00 UTC (MSK = UTC+3)
+  assert.equal(zonedToUtcIso('2026-09-06', '20:00', 'Europe/Moscow'), '2026-09-06T17:00:00.000Z');
+  // 15:30 в Лондоне летом = 14:30 UTC (BST = UTC+1)
+  assert.equal(zonedToUtcIso('2026-09-06', '15:30', 'Europe/London'), '2026-09-06T14:30:00.000Z');
+});
+
+test('статус матча выводится из времени и наличия счёта', () => {
+  const past = new Date(Date.now() - 3600_000).toISOString();
+  assert.equal(deriveStatus(past, false), 'live');
+  assert.equal(deriveStatus(past, true), 'finished');
+  assert.equal(deriveStatus(new Date(Date.now() + 86400_000).toISOString(), false), 'scheduled');
+});
+
+test('события StatsBomb агрегируются в статистику, таймлайн и бомбардиров', () => {
+  const events = [
+    { team: { name: 'France' }, type: { name: 'Pass' }, pass: {}, minute: 3 },
+    { team: { name: 'France' }, type: { name: 'Pass' }, pass: { outcome: { name: 'Incomplete' } }, minute: 4 },
+    { team: { name: 'France' }, type: { name: 'Pass' }, pass: { type: { name: 'Corner' } }, minute: 5 },
+    {
+      team: { name: 'France' },
+      type: { name: 'Shot' },
+      shot: { statsbomb_xg: 0.42, outcome: { name: 'Goal' } },
+      player: { id: 3009, name: 'Kylian Mbappé Lottin' },
+      minute: 61,
+    },
+    {
+      team: { name: 'Denmark' },
+      type: { name: 'Foul Committed' },
+      foul_committed: { card: { name: 'Yellow Card' } },
+      player: { id: 5555, name: 'Pierre-Emile Højbjerg' },
+      minute: 70,
+    },
+    {
+      team: { name: 'France' },
+      type: { name: 'Substitution' },
+      substitution: { replacement: { id: 2972, name: 'Marcus Thuram' } },
+      player: { id: 3009, name: 'Kylian Mbappé Lottin' },
+      minute: 78,
+    },
+  ];
+
+  const agg = aggregateEvents(events, 'france', 'denmark', 'France', 'Denmark');
+
+  assert.equal(agg.stats.france.passes_attempted, 3);
+  assert.equal(agg.stats.france.passes_completed, 2);
+  assert.equal(agg.stats.france.corners, 1);
+  assert.equal(agg.stats.france.goals, 1);
+  assert.equal(agg.stats.france.shots_on_target, 1);
+  assert.ok(agg.stats.france.xg > 0.4 && agg.stats.france.xg < 0.5);
+  assert.equal(agg.stats.france.possession_pct + agg.stats.denmark.possession_pct, 100);
+  assert.equal(agg.stats.denmark.yellow_cards, 1);
+
+  assert.deepEqual(agg.timeline.map((t) => t.type), ['goal', 'yellow', 'substitution']);
+  assert.equal(agg.timeline[0].playerId, 'sb:3009');
+  assert.equal(agg.timeline[2].relatedPlayerId, 'sb:2972');
+
+  assert.equal(agg.scorers.length, 1);
+  assert.equal(agg.scorers[0].playerId, 'sb:3009');
+  assert.equal(agg.scorers[0].teamId, 'france');
+});
+
+test('парсер страницы VK Видео Live достаёт ссылки на эфиры', () => {
+  const html = `
+    <a href="https://live.vkvideo.ru/channel37051916/stream/sl_235167">
+      <div>ОРЕНБУРГ - АКРОН | ПРЯМАЯ ТРАНСЛЯЦИЯ</div><span>899 зрителей</span>
+    </a>
+    <a href="https://live.vkvideo.ru/manutdone/stream/sl_234432">
+      <div>Эвертон – Манчестер Юнайтед</div><span>908 зрителей</span>
+    </a>`;
+  const parsed = parseVkLiveHtml(html, 'https://live.vkvideo.ru/app/category/x', 'Футбол');
+  assert.equal(parsed.streams.length, 2);
+  assert.equal(parsed.streams[0].platform, 'vk');
+  assert.ok(parsed.streams[0].url.endsWith('sl_235167'));
+  assert.ok(parsed.streams[0].title.includes('ОРЕНБУРГ'));
+});

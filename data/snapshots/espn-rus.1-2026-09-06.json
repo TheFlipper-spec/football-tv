@@ -1,0 +1,143 @@
+{
+  "captured_at": "2026-09-06T14:12:00.000Z",
+  "captured_via": "agent web tools (fetch_page) — прямое HTTP-соединение из песочницы заблокировано",
+  "league": "rus.1",
+  "league_name": "Russian Premier League",
+  "source_url": "https://site.api.espn.com/apis/site/v2/sports/soccer/rus.1/scoreboard?dates=20260906",
+  "note": "Снимок матчей РПЛ 6 сентября 2026 из ответа ESPN Site API. Поля сокращены до используемых инжестом; сохранены только значения, которые реально присутствовали в ответе.",
+  "events": [
+    {
+      "id": "401879866",
+      "date": "2026-09-06T11:00:00Z",
+      "name": "Akron Tolyatti at Gazovik Orenburg",
+      "shortName": "AKT @ ORE",
+      "competitions": [
+        {
+          "id": "401879866",
+          "date": "2026-09-06T11:00:00Z",
+          "attendance": 0,
+          "status": {
+            "clock": 5400.0,
+            "displayClock": "90'+7'",
+            "period": 2,
+            "type": {
+              "id": "28",
+              "name": "STATUS_FULL_TIME",
+              "state": "post",
+              "completed": true,
+              "description": "Full Time",
+              "detail": "FT",
+              "shortDetail": "FT"
+            }
+          },
+          "venue": {
+            "id": "6677",
+            "fullName": "Gazovik Stadium",
+            "address": {
+              "city": "Orenburg",
+              "country": "Russia"
+            }
+          },
+          "competitors": [
+            {
+              "id": "18285",
+              "homeAway": "home",
+              "score": "2",
+              "form": "DDDDD",
+              "records": [
+                {
+                  "type": "total",
+                  "summary": "1-5-1"
+                }
+              ],
+              "team": {
+                "id": "18285",
+                "abbreviation": "ORE",
+                "displayName": "Gazovik Orenburg",
+                "shortDisplayName": "Orenburg",
+                "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/18285.png"
+              }
+            },
+            {
+              "id": "22271",
+              "homeAway": "away",
+              "score": "2",
+              "form": "DDLDD",
+              "records": [
+                {
+                  "type": "total",
+                  "summary": "0-4-3"
+                }
+              ],
+              "team": {
+                "id": "22271",
+                "abbreviation": "AKT",
+                "displayName": "Akron Tolyatti",
+                "shortDisplayName": "Akron Tolyatti",
+                "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/22271.png"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401879867",
+      "date": "2026-09-06T17:45:00Z",
+      "name": "Lokomotiv Moscow at FC Baltika Kaliningrad (восстановлено из ссылки ESPN на матч)",
+      "shortName": "LMO @ BAL",
+      "competitions": [
+        {
+          "id": "401879867",
+          "date": "2026-09-06T17:45:00Z",
+          "status": {
+            "clock": 0.0,
+            "displayClock": "0'",
+            "type": {
+              "id": "1",
+              "name": "STATUS_SCHEDULED",
+              "state": "pre",
+              "completed": false,
+              "description": "Scheduled",
+              "detail": "Sun, September 6th at 1:45 PM EDT",
+              "shortDetail": "Scheduled"
+            }
+          },
+          "venue": {
+            "displayName": "Kaliningrad Stadium"
+          },
+          "competitors": [
+            {
+              "id": "21949",
+              "homeAway": "home",
+              "score": "0",
+              "team": {
+                "id": "21949",
+                "displayName": "FC Baltika Kaliningrad"
+              }
+            },
+            {
+              "id": "442",
+              "homeAway": "away",
+              "score": "0",
+              "form": "LLDDL",
+              "records": [
+                {
+                  "type": "total",
+                  "summary": "0-3-3"
+                }
+              ],
+              "team": {
+                "id": "442",
+                "abbreviation": "LMO",
+                "displayName": "Lokomotiv Moscow",
+                "shortDisplayName": "Lokomotiv",
+                "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/442.png"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
