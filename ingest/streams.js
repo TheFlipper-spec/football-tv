@@ -75,13 +75,34 @@ function snapshotFiles(snapshotsDir) {
     .map((f) => path.join(snapshotsDir, f));
 }
 
+/**
+ * Ссылка встраиваемого плеера.
+ *
+ * VK Видео Live отдаёт публичный embed по каналу: live.vkvideo.ru/app/embed/<канал>
+ * показывает текущий эфир этого канала (это официальный код из кнопки
+ * «Поделиться → Встроить», токен для него не нужен). OK Видео встраивается
+ * по id ролика: ok.ru/videoembed/<id>.
+ */
+export function buildEmbedUrl(platform, url) {
+  if (platform === 'vk') {
+    const m = /live\.vkvideo\.ru\/([^/?#]+)\/stream\//.exec(String(url || ''));
+    return m && m[1] !== 'app' ? `https://live.vkvideo.ru/app/embed/${m[1]}` : null;
+  }
+  if (platform === 'ok') {
+    const m = /ok\.ru\/(?:videoembed|video|live)\/(\d+)/.exec(String(url || ''));
+    return m ? `https://ok.ru/videoembed/${m[1]}` : null;
+  }
+  return null;
+}
+
 function upsertStreams(list, capturedAt, snapshotId) {
   const db = getDb();
   const stmt = db.prepare(
-    `INSERT INTO streams (id, platform, category, title, channel, url, viewers, is_live, captured_at, snapshot_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO streams (id, platform, category, title, channel, url, embed_url, viewers, is_live, captured_at, snapshot_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(url) DO UPDATE SET
-       title = excluded.title, channel = excluded.channel, viewers = excluded.viewers,
+       title = excluded.title, channel = excluded.channel, embed_url = excluded.embed_url,
+       viewers = excluded.viewers,
        is_live = excluded.is_live, captured_at = excluded.captured_at, snapshot_id = excluded.snapshot_id`,
   );
   let n = 0;
@@ -93,6 +114,7 @@ function upsertStreams(list, capturedAt, snapshotId) {
       s.title,
       s.channel || null,
       s.url,
+      s.embed_url || buildEmbedUrl(s.platform, s.url),
       Number(s.viewers || 0),
       s.is_live == null ? 1 : Number(s.is_live),
       capturedAt,
@@ -103,15 +125,29 @@ function upsertStreams(list, capturedAt, snapshotId) {
   return n;
 }
 
-/** Связывает трансляции с матчами в окне -6ч … +48ч. */
-export function rebuildMatchStreams({ windowHoursBefore = 6, windowHoursAfter = 48, log = console.log } = {}) {
+/**
+ * Связывает трансляции с матчами.
+ *
+ * Окно кандидатов считается от времени захвата КАЖДОЙ трансляции, а не от
+ * «сейчас»: эфир, снятый в 13:02, относится к матчам вокруг 13:02. Раньше окно
+ * скользило от текущего времени, и стоило серверу перезапустить связывание
+ * через 6 часов после начала матча — все его эфиры «отвязывались», хотя и матч,
+ * и трансляции никуда не делись.
+ */
+export function rebuildMatchStreams({ windowHoursBefore = 12, windowHoursAfter = 48, log = console.log } = {}) {
   const db = getDb();
-  const now = Date.now();
-  const from = new Date(now - windowHoursBefore * 3600_000).toISOString();
-  const to = new Date(now + windowHoursAfter * 3600_000).toISOString();
+
+  const streams = db.prepare('SELECT * FROM streams').all();
+
+  const anchors = streams
+    .map((s) => Date.parse(s.captured_at || ''))
+    .filter((t) => !Number.isNaN(t));
+  anchors.push(Date.now());
+  const from = new Date(Math.min(...anchors) - windowHoursBefore * 3600_000).toISOString();
+  const to = new Date(Math.max(...anchors) + windowHoursAfter * 3600_000).toISOString();
   const matches = db
     .prepare(
-      `SELECT id, competition_id, home_team_id, away_team_id
+      `SELECT id, competition_id, home_team_id, away_team_id, kickoff_utc
          FROM matches
         WHERE kickoff_utc IS NOT NULL AND kickoff_utc BETWEEN ? AND ?`,
     )
@@ -120,7 +156,17 @@ export function rebuildMatchStreams({ windowHoursBefore = 6, windowHoursAfter = 
   const teams = db.prepare('SELECT id, name, name_ru, short_name FROM teams').all();
   const aliasesByTeam = new Map(teams.map((t) => [t.id, teamAliases(t)]));
 
-  const streams = db.prepare('SELECT * FROM streams').all();
+  /** Кандидаты для конкретной трансляции — окно вокруг её времени захвата. */
+  const candidatesFor = (stream) => {
+    const captured = Date.parse(stream.captured_at || '');
+    if (Number.isNaN(captured)) return matches;
+    const lo = captured - windowHoursBefore * 3600_000;
+    const hi = captured + windowHoursAfter * 3600_000;
+    return matches.filter((m) => {
+      const t = Date.parse(m.kickoff_utc);
+      return t >= lo && t <= hi;
+    });
+  };
 
   /*
    * Удаление и вставка — одна транзакция. Иначе сайт, открытый в момент
@@ -137,7 +183,7 @@ export function rebuildMatchStreams({ windowHoursBefore = 6, windowHoursAfter = 
     let n = 0;
     const seen = new Set();
     for (const stream of streams) {
-      const found = matchStream(stream, matches, aliasesByTeam);
+      const found = matchStream(stream, candidatesFor(stream), aliasesByTeam);
       for (const f of found) {
         insert.run(stream.id, f.matchId, f.score, `title-match:${f.matched}teams`);
         n += 1;

@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseOpenfootballText } from '../ingest/openfootball.js';
 import { aggregateEvents } from '../ingest/statsbomb.js';
-import { parseVkLiveHtml } from '../ingest/streams.js';
-import { zonedToUtcIso, deriveStatus } from '../lib/time.js';
+import { parseVkLiveHtml, buildEmbedUrl } from '../ingest/streams.js';
+import { zonedToUtcIso, deriveStatus, minuteFromKickoff } from '../lib/time.js';
 
 const RPL_TXT = `= Russia Premier League 2024/25
 
@@ -113,4 +113,24 @@ test('парсер страницы VK Видео Live достаёт ссылк
   assert.equal(parsed.streams[0].platform, 'vk');
   assert.ok(parsed.streams[0].url.endsWith('sl_235167'));
   assert.ok(parsed.streams[0].title.includes('ОРЕНБУРГ'));
+});
+
+test('игровая минута учитывает перерыв и не выходит за 90', () => {
+  const now = Date.now();
+  const kickoff = (minsAgo) => new Date(now - minsAgo * 60_000).toISOString();
+  assert.equal(minuteFromKickoff(kickoff(0), now), 0);
+  assert.equal(minuteFromKickoff(kickoff(30), now), 30, 'первый тайм — минута равна настенной');
+  assert.equal(minuteFromKickoff(kickoff(50), now), 45, 'перерыв — держим 45-ю');
+  assert.equal(minuteFromKickoff(kickoff(61), now), 46, 'второй тайм начинается с 46-й');
+  assert.equal(minuteFromKickoff(kickoff(105), now), 90);
+  assert.equal(minuteFromKickoff(kickoff(134), now), 90, 'больше 90-й не показываем — реальное добавленное время неизвестно');
+});
+
+test('ссылка встраиваемого плеера строится для VK и OK', () => {
+  assert.equal(
+    buildEmbedUrl('vk', 'https://live.vkvideo.ru/manutdone/stream/sl_234432'),
+    'https://live.vkvideo.ru/app/embed/manutdone',
+  );
+  assert.equal(buildEmbedUrl('ok', 'https://ok.ru/video/1115050286838'), 'https://ok.ru/videoembed/1115050286838');
+  assert.equal(buildEmbedUrl('vk', 'https://example.com/что-то-другое'), null);
 });

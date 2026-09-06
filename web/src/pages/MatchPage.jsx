@@ -2,8 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../api.js';
 import {
-  useData, useTicker, Crest, matchTeams, fmtTime, fmtDayLabel, countdown,
-  STAT_LABELS, STAT_ORDER, EVENT_META, fmtViewers, plural,
+  useData, useTicker, Crest, matchTeams, fmtTime, fmtDayLabel, startsIn,
+  STAT_LABELS, STAT_ORDER, EVENT_META, fmtViewers, plural, streamEmbedSrc,
 } from '../utils.jsx';
 import { MatchList, SectionHead, Loading, ErrorBox } from '../components.jsx';
 
@@ -175,26 +175,50 @@ function TvTab({ streams, match }) {
   }
   const s = streams[active] || streams[0];
   const viewers = fmtViewers(s.viewers);
+  const embedSrc = streamEmbedSrc(s);
 
   return (
     <div>
       <div className="player-frame">
-        <div className="player-fallback">
-          <span className={`badge ${s.platform === 'ok' ? 'badge-ok' : 'badge-vk'}`}>
-            {s.platform === 'ok' ? 'OK Видео' : 'VK Видео Live'}
-          </span>
-          <div className="big">{s.title}</div>
-          <p>
-            {s.channel ? `Канал: ${s.channel}. ` : ''}
-            Прямой эфир доступен на площадке вещателя — плеер открывается в новой вкладке, чтобы сохранить
-            авторизацию и защиту контента платформы.
-            {viewers ? ` Сейчас смотрят: ${viewers}.` : ''}
-          </p>
-          <a className={`btn ${s.platform === 'ok' ? 'btn-ok' : 'btn-vk'}`} href={s.url} target="_blank" rel="noreferrer noopener">
-            ▶ Открыть трансляцию
+        {embedSrc ? (
+          <iframe
+            key={embedSrc}
+            src={embedSrc}
+            title={s.title}
+            allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+            allowFullScreen
+            frameBorder="0"
+          />
+        ) : (
+          <div className="player-fallback">
+            <span className={`badge ${s.platform === 'ok' ? 'badge-ok' : 'badge-vk'}`}>
+              {s.platform === 'ok' ? 'OK Видео' : 'VK Видео Live'}
+            </span>
+            <div className="big">{s.title}</div>
+            <p>
+              {s.channel ? `Канал: ${s.channel}. ` : ''}
+              Для этого эфира площадка не отдаёт встраиваемый плеер — он откроется на сайте вещателя.
+              {viewers ? ` Сейчас смотрят: ${viewers}.` : ''}
+            </p>
+            <a className={`btn ${s.platform === 'ok' ? 'btn-ok' : 'btn-vk'}`} href={s.url} target="_blank" rel="noreferrer noopener">
+              ▶ Открыть трансляцию
+            </a>
+          </div>
+        )}
+      </div>
+
+      {embedSrc && (
+        <div className="row-between wrap mt-16" style={{ gap: 8 }}>
+          <div className="muted small">
+            {s.channel ? <>Канал: <b>{s.channel}</b>. </> : null}
+            {viewers ? <>Сейчас смотрят: {viewers}. </> : null}
+            Если плеер не запустился, эфир можно открыть на площадке.
+          </div>
+          <a className="btn btn-sm" href={s.url} target="_blank" rel="noreferrer noopener">
+            Открыть в {s.platform === 'ok' ? 'OK' : 'VK'} ↗
           </a>
         </div>
-      </div>
+      )}
 
       {streams.length > 1 && (
         <div className="chips mt-16">
@@ -236,9 +260,13 @@ function TvTab({ streams, match }) {
 
 export default function MatchPage() {
   const { id } = useParams();
-  const [tab, setTab] = useState('events');
+  const [tab, setTab] = useState(null); // null — вкладка ещё не выбрана ни пользователем, ни данными
   const { data, loading, error } = useData(() => api.match(id), [id], { intervalMs: 30_000 });
   useTicker(1000);
+
+  // Стартовая вкладка — по данным: у календарного матча без протокола, но с
+  // эфирами сразу открываем «Трансляцию», а не пустые «События».
+  const activeTab = tab ?? (data && !data.events.length && data.streams.length ? 'tv' : 'events');
 
   const availableTabs = useMemo(() => {
     if (!data) return TABS;
@@ -289,7 +317,7 @@ export default function MatchPage() {
           ) : hasScore ? (
             <span className="badge badge-ft">завершён</span>
           ) : (
-            <span className="badge badge-soon">через {countdown(m.kickoff_utc)}</span>
+            <span className="badge badge-soon">{startsIn(m.kickoff_utc)}</span>
           )}
         </div>
 
@@ -339,10 +367,10 @@ export default function MatchPage() {
           <span className="badge">источник: {m.source}</span>
         </div>
 
-        {m.streams?.length > 0 && (
+        {data.streams?.length > 0 && (
           <div className="row gap-8 mt-16" style={{ justifyContent: 'center' }}>
             <button className="btn btn-vk" onClick={() => setTab('tv')}>
-              ▶ {m.streams.length} {plural(m.streams.length, 'трансляция', 'трансляции', 'трансляций')}
+              ▶ {data.streams.length} {plural(data.streams.length, 'трансляция', 'трансляции', 'трансляций')}
             </button>
           </div>
         )}
@@ -352,7 +380,7 @@ export default function MatchPage() {
         {availableTabs.map((t) => (
           <button
             key={t.id}
-            className={`tab ${tab === t.id ? 'active' : ''} ${t.disabled ? 'muted' : ''}`}
+            className={`tab ${activeTab === t.id ? 'active' : ''} ${t.disabled ? 'muted' : ''}`}
             onClick={() => setTab(t.id)}
           >
             {t.label}{t.count ? ` · ${t.count}` : ''}
@@ -360,10 +388,10 @@ export default function MatchPage() {
         ))}
       </div>
 
-      {tab === 'events' && <Timeline events={data.events} match={m} />}
-      {tab === 'lineups' && <Lineups lineups={data.lineups} match={m} />}
-      {tab === 'stats' && <Stats stats={data.stats} match={m} />}
-      {tab === 'tv' && <TvTab streams={data.streams} match={m} />}
+      {activeTab === 'events' && <Timeline events={data.events} match={m} />}
+      {activeTab === 'lineups' && <Lineups lineups={data.lineups} match={m} />}
+      {activeTab === 'stats' && <Stats stats={data.stats} match={m} />}
+      {activeTab === 'tv' && <TvTab streams={data.streams} match={m} />}
 
       {data.headToHead?.length > 0 && (
         <section className="section">

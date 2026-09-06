@@ -17,6 +17,8 @@ const matches = [
   { id: 'm1', competition_id: 'openfootball:ru.1', home_team_id: 'fk-orenburg', away_team_id: 'akron-tolyatti' },
   { id: 'm2', competition_id: 'openfootball:en.1', home_team_id: 'everton', away_team_id: 'manchester-united' },
   { id: 'm3', competition_id: 'openfootball:en.1', home_team_id: 'liverpool', away_team_id: 'everton' },
+  // live-слой ESPN хранит тот же матч под другим id турнира
+  { id: 'm4', competition_id: 'espn:rus.1', home_team_id: 'fk-orenburg', away_team_id: 'akron-tolyatti' },
 ];
 
 test('реальный заголовок VK-эфира связывается с матчем РПЛ', () => {
@@ -50,4 +52,14 @@ test('нерелевантный эфир ни к чему не привязыв
 test('одна команда без ключевого слова турнира — недостаточно для связи', () => {
   const found = matchStream({ title: 'Ростов играет дома' }, matches, aliasesByTeam);
   assert.deepEqual(found, []);
+});
+
+test('бонус за ключевое слово лиги работает и для id турниров ESPN', () => {
+  const found = matchStream(
+    { title: 'Оренбург - Акрон | РПЛ 7 тур | 06.09.26 14:00 по МСК' },
+    matches,
+    aliasesByTeam,
+  );
+  const ids = found.map((f) => f.matchId).sort();
+  assert.deepEqual(ids, ['m1', 'm4'], 'связываются оба представления матча — openfootball и ESPN');
 });

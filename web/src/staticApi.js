@@ -10,6 +10,7 @@
  * Имена файлов считает lib/staticKey.js — тот же модуль, что и у экспортера.
  */
 import { staticKey, competitionKey } from '../../lib/staticKey.js';
+import { minuteFromKickoff } from '../../lib/time.js';
 
 /**
  * Каталог, откуда читать снимок. В сборке Vite база известна из
@@ -68,6 +69,7 @@ function decorate(m, now = Date.now()) {
   const validStart = Boolean(start) && !Number.isNaN(start);
   const hasScore = m.home_score != null && m.away_score != null;
   let status = m.status;
+  let minute = m.minute;
 
   if (status === 'live' && validStart && now - start > 165 * 60_000) status = 'finished';
   else if (status !== 'live' && hasScore) status = 'finished';
@@ -75,7 +77,13 @@ function decorate(m, now = Date.now()) {
     const fullTime = start + 125 * 60_000;
     if (now >= start && now < fullTime) status = 'live';
   }
-  return status === m.status ? m : { ...m, status };
+
+  // Те же правила минуты, что в server/index.js: минута есть только у live,
+  // а «настенное» время пересчитывается в игровое с учётом 15-минутного перерыва.
+  if (status !== 'live') minute = null;
+  else if (minute == null || minute > 120) minute = minuteFromKickoff(m.kickoff_utc, now);
+
+  return status === m.status && minute === m.minute ? m : { ...m, status, minute };
 }
 
 /** Повторяет WHERE/ORDER BY/LIMIT из server/index.js:listMatches. */

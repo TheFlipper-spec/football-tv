@@ -4,8 +4,8 @@ import { useData, fmtDayLabel } from '../utils.jsx';
 import { MatchList, SectionHead, Loading, ErrorBox } from '../components.jsx';
 
 const RANGES = [
-  { id: 'live', label: 'Сейчас', days: 0, live: true },
-  { id: 'today', label: 'Сегодня', days: 0 },
+  { id: 'live', label: 'Сейчас', live: true },
+  { id: 'today', label: 'Сегодня', today: true },
   { id: '3d', label: '3 дня', days: 3 },
   { id: 'week', label: 'Неделя', days: 7 },
   { id: 'month', label: 'Месяц', days: 30 },
@@ -15,13 +15,17 @@ const RANGES = [
 ];
 
 function groupByDay(matches) {
+  // Матчи приходят уже в нужном порядке (для будущих — по возрастанию, для
+  // результатов — по убыванию), поэтому дни идут в порядке появления. Раньше
+  // группы всегда сортировались по убыванию, и в «Неделе» первым показывался
+  // самый дальний день вместо сегодняшнего.
   const map = new Map();
   for (const m of matches) {
     const key = (m.kickoff_utc || 'nodate').slice(0, 10);
     if (!map.has(key)) map.set(key, []);
     map.get(key).push(m);
   }
-  return [...map.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
+  return [...map.entries()];
 }
 
 export default function Matches() {
@@ -39,6 +43,11 @@ export default function Matches() {
     if (r.past) {
       p.to = new Date().toISOString();
       p.order = 'desc';
+    } else if (r.today) {
+      // «Сегодня» — весь текущий день по UTC-дате матча, включая уже сыгранное.
+      // Раньше { days: 0 } не давал ни одного фильтра, и список открывался
+      // с самых старых матчей базы — 2010 год вместо сегодняшнего дня.
+      p.day = new Date().toISOString().slice(0, 10);
     } else if (r.days) {
       p.from = new Date().toISOString();
       p.to = new Date(Date.now() + r.days * 86400000).toISOString();

@@ -212,9 +212,19 @@ function upsertEvent(ev, league) {
   const hasScore = home.score != null && away.score != null && state !== 'pre';
   let status = state === 'in' ? 'live' : state === 'post' ? 'finished' : 'scheduled';
   if (state === 'pre' && !hasScore) status = deriveStatus(kickoffUtc, false);
-  const minute = comp.status?.period
-    ? Math.max(0, Math.round((Number(comp.status?.clock || 0)) / 60 + (comp.status.period - 1) * 45))
-    : null;
+
+  /*
+   * Минута матча. `status.clock` у ESPN — сквозные секунды матча (на 90-й
+   * минуте это 5400), поэтому прибавлять (period-1)*45 нельзя: выходило
+   * 90 + 45 = «135-я минута». Берём минуту из displayClock («90'+7'» → 90),
+   * а clock оставляем запасным вариантом. У не-идущего матча минуты нет.
+   */
+  let minute = null;
+  if (state === 'in') {
+    const display = Number.parseInt(comp.status?.displayClock ?? '', 10);
+    if (Number.isFinite(display)) minute = Math.max(0, Math.min(display, 120));
+    else if (comp.status?.clock != null) minute = Math.max(0, Math.min(Math.round(Number(comp.status.clock) / 60), 120));
+  }
 
   const espnId = `${SOURCE}:${league.slug}:${ev.id}`;
   const existing = findExistingMatch(homeId, awayId, kickoffUtc);
