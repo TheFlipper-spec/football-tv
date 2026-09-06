@@ -173,18 +173,39 @@ app.get('/api/overview', (req, res) => {
     { from: new Date(Date.now() + 3 * 3600_000).toISOString(), to: new Date(Date.now() + 8 * 86400_000).toISOString() },
     60,
   );
-  const featured = attachStreams(live).sort((a, b) => (b.streams.length - a.streams.length))[0]
-    || attachStreams(
-        decorate(
-          all(
-            `${MATCH_SELECT}
-              WHERE m.kickoff_utc IS NOT NULL AND m.kickoff_utc <= datetime('now', '+24 hours')
-                AND m.kickoff_utc >= datetime('now', '-6 hours')
-                AND m.id IN (SELECT match_id FROM match_streams)
-              ORDER BY m.kickoff_utc ASC LIMIT 5`,
-          ),
+  // Featured — самый релевантный матч прямо сейчас. Только что закончившаяся
+  // игра с кучей эфиров важнее идущего матча без единого потока, поэтому в
+  // кандидаты берём и live, и завершённые за последние часы.
+  const featuredPool = attachStreams([
+    ...live,
+    ...decorate(
+      all(
+        `${MATCH_SELECT}
+          WHERE m.status = 'finished'
+            AND m.kickoff_utc >= datetime('now', '-6 hours')
+            AND m.id IN (SELECT match_id FROM match_streams)
+          ORDER BY m.kickoff_utc DESC LIMIT 10`,
+      ),
+    ),
+  ]);
+  const byRelevance = (a, b) =>
+    b.streams.length - a.streams.length ||
+    (a.status === 'live' ? 0 : 1) - (b.status === 'live' ? 0 : 1) ||
+    String(b.kickoff_utc || '').localeCompare(String(a.kickoff_utc || ''));
+  const featured =
+    featuredPool.sort(byRelevance)[0] ||
+    attachStreams(
+      decorate(
+        all(
+          `${MATCH_SELECT}
+            WHERE m.kickoff_utc IS NOT NULL AND m.kickoff_utc <= datetime('now', '+24 hours')
+              AND m.kickoff_utc >= datetime('now', '-6 hours')
+              AND m.id IN (SELECT match_id FROM match_streams)
+            ORDER BY m.kickoff_utc ASC LIMIT 5`,
         ),
-      )[0] || null;
+      ),
+    )[0] ||
+    null;
 
   const streams = all(
     `SELECT s.*, (SELECT COUNT(*) FROM match_streams ms WHERE ms.stream_id = s.id) AS matched

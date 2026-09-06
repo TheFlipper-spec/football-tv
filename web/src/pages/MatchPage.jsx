@@ -263,6 +263,18 @@ export default function MatchPage() {
   const { home, away, homeShort, awayShort, homeSrc, awaySrc } = matchTeams(m);
   const hasScore = m.home_score != null && m.away_score != null;
 
+  // Авторы голов — прямо в шапке, чтобы не искать по вкладкам.
+  const goalRows = (data.events || [])
+    .filter((e) => e.type === 'goal' || e.type === 'penalty' || e.type === 'own_goal')
+    .map((e) => ({
+      minute: e.minute ?? '—',
+      extra: e.extra_minute,
+      player: e.player_name || e.detail || '—',
+      team: e.team_id === m.home_id ? home : away,
+      pen: e.type === 'penalty',
+      own: e.type === 'own_goal',
+    }));
+
   return (
     <div className="fade-in">
       <div className="match-head">
@@ -307,6 +319,18 @@ export default function MatchPage() {
             </div>
           </Link>
         </div>
+
+        {goalRows.length > 0 && (
+          <div className="goal-line mt-16">
+            <span className="goal-line-title">⚽ Голы</span>
+            {goalRows.map((g, i) => (
+              <span className="goal-chip" key={i}>
+                <b>{g.minute}{g.extra ? `+${g.extra}` : ''}</b> {g.player}
+                <em>{g.team}</em>
+              </span>
+            ))}
+          </div>
+        )}
 
         <div className="hero-chips mt-24" style={{ justifyContent: 'center' }}>
           {m.venue && <span className="badge">📍 {m.venue}{m.city ? `, ${m.city}` : ''}{m.country ? `, ${m.country}` : ''}</span>}

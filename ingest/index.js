@@ -141,6 +141,9 @@ try {
     step('ESPN live (текущий счёт и минута)');
     ingestEspn({ log, snapshotsDir: SNAPSHOTS, live: !noLive });
     rebuildMatchStreams({ log });
+    // ESPN обновил счёт — таблицы надо пересчитать уже с ним
+    step('Турнирные таблицы (после live-слоя)');
+    buildStandings({ log });
   }
 
   if (!only) {

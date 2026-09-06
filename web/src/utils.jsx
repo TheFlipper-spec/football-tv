@@ -159,6 +159,7 @@ export const STAT_LABELS = {
   passes_completed: 'Точные пасы',
   corners: 'Угловые',
   offsides: 'Офсайды',
+  goal_assists: 'Голевые передачи',
   fouls_committed: 'Фолы',
   fouls_won: 'Заработано фолов',
   yellow_cards: 'Жёлтые',
@@ -171,7 +172,7 @@ export const STAT_LABELS = {
 
 export const STAT_ORDER = [
   'possession_pct', 'xg', 'shots', 'shots_on_target', 'passes_attempted', 'passes_completed',
-  'corners', 'offsides', 'fouls_committed', 'tackles', 'saves', 'dribbles_completed',
+  'corners', 'offsides', 'goal_assists', 'fouls_committed', 'tackles', 'saves', 'dribbles_completed',
   'yellow_cards', 'red_cards',
 ];
 

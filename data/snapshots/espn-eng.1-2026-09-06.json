@@ -1,0 +1,170 @@
+{
+  "captured_at": "2026-09-06T15:20:00.000Z",
+  "captured_via": "agent web tools (fetch_page) — прямое HTTP-соединение из песочницы заблокировано",
+  "league": "eng.1",
+  "league_name": "English Premier League",
+  "source_url": "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?dates=20260906",
+  "note": "Снимок матча АПЛ 6 сентября 2026 из ответа ESPN Site API. Значения оригинальные; сохранены только поля, реально присутствовавшие в ответе.",
+  "events": [
+    {
+      "id": "401879291",
+      "date": "2026-09-06T13:00:00Z",
+      "name": "Manchester United at Everton",
+      "shortName": "MAN @ EVE",
+      "competitions": [
+        {
+          "id": "401879291",
+          "date": "2026-09-06T13:00:00Z",
+          "attendance": 0,
+          "status": {
+            "clock": 5400.0,
+            "displayClock": "90'+7'",
+            "period": 2,
+            "type": {
+              "id": "28",
+              "name": "STATUS_FULL_TIME",
+              "state": "post",
+              "completed": true,
+              "description": "Full Time",
+              "detail": "FT",
+              "shortDetail": "FT"
+            }
+          },
+          "venue": {
+            "id": "10318",
+            "fullName": "Hill Dickinson Stadium",
+            "address": { "city": "Liverpool", "country": "England" }
+          },
+          "competitors": [
+            {
+              "id": "368",
+              "homeAway": "home",
+              "score": "2",
+              "form": "DDWWL",
+              "records": [{ "type": "total", "summary": "1-2-0" }],
+              "team": {
+                "id": "368",
+                "abbreviation": "EVE",
+                "displayName": "Everton",
+                "shortDisplayName": "Everton",
+                "color": "0606fa",
+                "alternateColor": "ffffff",
+                "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/368.png"
+              },
+              "statistics": [
+                { "name": "foulsCommitted", "displayValue": "7" },
+                { "name": "wonCorners", "displayValue": "4" },
+                { "name": "goalAssists", "displayValue": "1" },
+                { "name": "possessionPct", "displayValue": "45.4" },
+                { "name": "shotsOnTarget", "displayValue": "6" },
+                { "name": "totalGoals", "displayValue": "2" },
+                { "name": "totalShots", "displayValue": "18" }
+              ]
+            },
+            {
+              "id": "360",
+              "homeAway": "away",
+              "score": "2",
+              "form": "DWLWW",
+              "records": [{ "type": "total", "summary": "1-1-1" }],
+              "team": {
+                "id": "360",
+                "abbreviation": "MAN",
+                "displayName": "Manchester United",
+                "shortDisplayName": "Man United",
+                "color": "da020e",
+                "alternateColor": "4169E1",
+                "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/360.png"
+              },
+              "statistics": [
+                { "name": "foulsCommitted", "displayValue": "11" },
+                { "name": "wonCorners", "displayValue": "3" },
+                { "name": "goalAssists", "displayValue": "2" },
+                { "name": "possessionPct", "displayValue": "54.6" },
+                { "name": "shotsOnTarget", "displayValue": "3" },
+                { "name": "totalGoals", "displayValue": "2" },
+                { "name": "totalShots", "displayValue": "14" }
+              ]
+            }
+          ],
+          "details": [
+            {
+              "type": { "id": "94", "text": "Yellow Card" },
+              "clock": { "value": 772.0, "displayValue": "13'" },
+              "team": { "id": "368" },
+              "yellowCard": true,
+              "athletesInvolved": [{ "id": "378458", "displayName": "Harrison Armstrong", "jersey": "45", "position": "RM" }]
+            },
+            {
+              "type": { "id": "94", "text": "Yellow Card" },
+              "clock": { "value": 1999.0, "displayValue": "34'" },
+              "team": { "id": "368" },
+              "yellowCard": true,
+              "athletesInvolved": [{ "id": "291307", "displayName": "Brennan Johnson", "jersey": "22", "position": "AM-R" }]
+            },
+            {
+              "type": { "id": "70", "text": "Goal" },
+              "clock": { "value": 2760.0, "displayValue": "46'" },
+              "team": { "id": "360" },
+              "scoreValue": 1,
+              "scoringPlay": true,
+              "athletesInvolved": [{ "id": "271170", "displayName": "Bryan Mbeumo", "jersey": "19", "position": "AM-R" }]
+            },
+            {
+              "type": { "id": "94", "text": "Yellow Card" },
+              "clock": { "value": 3710.0, "displayValue": "62'" },
+              "team": { "id": "360" },
+              "yellowCard": true,
+              "athletesInvolved": [{ "id": "167127", "displayName": "Luke Shaw", "jersey": "23", "position": "LB" }]
+            },
+            {
+              "type": { "id": "94", "text": "Yellow Card" },
+              "clock": { "value": 3802.0, "displayValue": "64'" },
+              "team": { "id": "368" },
+              "yellowCard": true,
+              "athletesInvolved": [{ "id": "311963", "displayName": "Merlin Röhl", "jersey": "34", "position": "RB" }]
+            },
+            {
+              "type": { "id": "94", "text": "Yellow Card" },
+              "clock": { "value": 4705.0, "displayValue": "79'" },
+              "team": { "id": "360" },
+              "yellowCard": true,
+              "athletesInvolved": [{ "id": "157073", "displayName": "Harry Maguire", "jersey": "5", "position": "CD-R" }]
+            },
+            {
+              "type": { "id": "94", "text": "Yellow Card" },
+              "clock": { "value": 4834.0, "displayValue": "81'" },
+              "team": { "id": "360" },
+              "yellowCard": true,
+              "athletesInvolved": [{ "id": "238902", "displayName": "Diogo Dalot", "jersey": "2", "position": "RB" }]
+            },
+            {
+              "type": { "id": "70", "text": "Goal" },
+              "clock": { "value": 4944.0, "displayValue": "83'" },
+              "team": { "id": "368" },
+              "scoreValue": 1,
+              "scoringPlay": true,
+              "athletesInvolved": [{ "id": "368864", "displayName": "Tyrique George", "jersey": "19", "position": "AM-L" }]
+            },
+            {
+              "type": { "id": "137", "text": "Goal - Header" },
+              "clock": { "value": 5232.0, "displayValue": "88'" },
+              "team": { "id": "360" },
+              "scoreValue": 1,
+              "scoringPlay": true,
+              "athletesInvolved": [{ "id": "289155", "displayName": "Benjamin Sesko", "jersey": "30", "position": "SUB" }]
+            },
+            {
+              "type": { "id": "70", "text": "Goal" },
+              "clock": { "value": 5400.0, "displayValue": "90'+6'" },
+              "team": { "id": "368" },
+              "scoreValue": 1,
+              "scoringPlay": true,
+              "athletesInvolved": [{ "id": "214402", "displayName": "Ainsley Maitland-Niles", "jersey": "2", "position": "SUB" }]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

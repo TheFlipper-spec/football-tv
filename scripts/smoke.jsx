@@ -185,9 +185,20 @@ expect(stTab && /Владение/.test(stTab) && /xG/.test(stTab) && /Удар�
 
 // матч без протокола: пустая вкладка должна объяснять и вести туда, где протокол есть
 const plain = await visit('/match/' + overview.featured.id, 1200);
-const emptyTab = await clickTab('События');
-expect(emptyTab && /StatsBomb/.test(emptyTab), 'пустая вкладка объясняет, откуда берутся протоколы');
-expect(!!document.querySelector('main a[href="/matches"]'), 'из пустой вкладки есть переход к матчам с протоколом');
+expect(plain.text.includes('2:2'), 'featured-матч показывает итоговый счёт 2:2 из live-слоя');
+expect(/Mbeumo|Sesko|George|Maitland-Niles/.test(plain.text), 'в шапке матча видны авторы голов');
+expect(plain.html.includes('goal-chip'), 'авторы голов оформлены отдельными плашками');
+const fStats = await clickTab('Статистика');
+expect(fStats && /Владение/.test(fStats) && /Удары в створ/.test(fStats), 'Статистика матча АПЛ: владение и удары из live-слоя');
+// матч БЕЗ протокола берём отдельный: у featured теперь есть события из live-слоя
+const noDepth = (await (await fetch(ORIGIN + '/api/matches?limit=400')).json()).matches
+  .find((m) => !m.has_events && !m.has_lineups && !m.has_stats);
+if (noDepth) {
+  await visit('/match/' + noDepth.id, 1200);
+  const emptyTab = await clickTab('События');
+  expect(emptyTab && /StatsBomb/.test(emptyTab), 'пустая вкладка объясняет, откуда берутся протоколы');
+  expect(!!document.querySelector('main a[href="/matches"]'), 'из пустой вкладки есть переход к матчам с протоколом');
+}
 
 // на главной раздел «Матчи с протоколом» должен быть виден
 const home2 = await visit('/', 1200);

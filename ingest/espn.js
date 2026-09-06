@@ -85,6 +85,116 @@ function findExistingMatch(homeId, awayId, kickoffUtc) {
   return m && m.kickoff_utc?.slice(0, 10) === day ? row.id : null;
 }
 
+
+/** Названия статистики ESPN → наши ключи (их знает фронтенд через STAT_LABELS). */
+const STAT_MAP = {
+  possessionPct: 'possession_pct',
+  totalShots: 'shots',
+  shotsOnTarget: 'shots_on_target',
+  wonCorners: 'corners',
+  foulsCommitted: 'fouls_committed',
+  goalAssists: 'goal_assists',
+  totalGoals: 'goals',
+  totalPasses: 'passes_attempted',
+  passesCompleted: 'passes_completed',
+  offsides: 'offsides',
+  saves: 'saves',
+  tackles: 'tackles',
+};
+
+/** Тип события ESPN → наш тип. */
+function eventKind(text) {
+  const t = String(text || '').toLowerCase();
+  if (t.includes('penalty')) return 'penalty';
+  if (t.includes('own goal')) return 'own_goal';
+  if (t.includes('goal')) return 'goal';
+  if (t.includes('second yellow')) return 'red';
+  if (t.includes('red card')) return 'red';
+  if (t.includes('yellow')) return 'yellow';
+  if (t.includes('substitution')) return 'substitution';
+  return t || 'event';
+}
+
+function upsertPlayer(a) {
+  if (!a?.id) return null;
+  const db = getDb();
+  const id = `espn:${a.id}`;
+  db.prepare(
+    `INSERT INTO players (id, name, nickname, position) VALUES (?, ?, ?, ?)
+     ON CONFLICT(id) DO UPDATE SET name = excluded.name, position = COALESCE(excluded.position, players.position)`,
+  ).run(id, a.fullName || a.displayName || String(a.id), a.shortName || null, a.position || null);
+  return id;
+}
+
+/**
+ * Глубина матча из ответа ESPN: поминутные события (голы, карточки, замены)
+ * и командная статистика. Именно этого не хватает календарным матчам openfootball.
+ */
+function upsertMatchDepth(matchId, comp, homeId, awayId) {
+  const db = getDb();
+  const teamIdByEspn = new Map();
+  for (const c of comp.competitors || []) {
+    if (c.id != null) teamIdByEspn.set(String(c.id), c.homeAway === 'home' ? homeId : awayId);
+  }
+  const row = db.prepare('SELECT competition_id, season_id FROM matches WHERE id = ?').get(matchId);
+  if (!row) return;
+
+  // события перезаписываем целиком, иначе повторный инжест их удвоит
+  db.prepare("DELETE FROM match_events WHERE match_id = ? AND player_id LIKE 'espn:%'").run(matchId);
+  const insEv = db.prepare(
+    `INSERT INTO match_events (match_id, minute, extra_minute, period, type, team_id, player_id, detail)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+  );
+  const insStat = db.prepare(
+    `INSERT INTO match_stats (match_id, team_id, stat, value) VALUES (?, ?, ?, ?)
+     ON CONFLICT(match_id, team_id, stat) DO UPDATE SET value = excluded.value`,
+  );
+
+  let events = 0;
+  let goals = 0;
+  for (const d of comp.details || []) {
+    const kind = eventKind(d.type?.text);
+    const teamId = teamIdByEspn.get(String(d.team?.id)) || null;
+    const a = d.athletesInvolved?.[0];
+    const playerId = upsertPlayer(a);
+    const display = d.clock?.displayValue || null;
+    const minute = display ? Number.parseInt(display, 10) : null;
+    const extra = display && display.includes('+') ? Number.parseInt(display.split('+')[1], 10) : null;
+    const isGoal = kind === 'goal' || kind === 'penalty' || kind === 'own_goal';
+    insEv.run(
+      matchId,
+      Number.isFinite(minute) ? minute : null,
+      Number.isFinite(extra) ? extra : null,
+      d.period || null,
+      kind,
+      teamId,
+      playerId,
+      d.type?.text || null,
+    );
+    events += 1;
+    if (isGoal && playerId && d.scoringPlay) goals += 1;
+  }
+
+  let stats = 0;
+  for (const c of comp.competitors || []) {
+    const teamId = teamIdByEspn.get(String(c.id));
+    if (!teamId) continue;
+    for (const st of c.statistics || []) {
+      const key = STAT_MAP[st.name];
+      const value = Number.parseFloat(st.displayValue ?? st.value);
+      if (!key || !Number.isFinite(value)) continue;
+      insStat.run(matchId, teamId, key, value);
+      stats += 1;
+    }
+  }
+
+  db.prepare(
+    `UPDATE matches SET has_events = ?, has_stats = ? WHERE id = ?`,
+  ).run(events ? 1 : 0, stats ? 1 : 0, matchId);
+
+  return { events, stats, goals };
+}
+
 function upsertEvent(ev, league) {
   const db = getDb();
   const comp = ev.competitions?.[0];
@@ -130,6 +240,8 @@ function upsertEvent(ev, league) {
        home_score = excluded.home_score,
        away_score = excluded.away_score,
        venue = COALESCE(excluded.venue, matches.venue),
+       city = COALESCE(excluded.city, matches.city),
+       country = COALESCE(excluded.country, matches.country),
        attendance = COALESCE(excluded.attendance, matches.attendance),
        updated_at = excluded.updated_at`,
   ).run(
@@ -150,7 +262,37 @@ function upsertEvent(ev, league) {
     new Date().toISOString(),
   );
 
+  const depth = upsertMatchDepth(id, comp, homeId, awayId);
+  if (depth && (depth.events || depth.stats)) {
+    logDepth?.(`${homeId} — ${awayId}: событий ${depth.events}, статистики ${depth.stats}, голов ${depth.goals}`);
+  }
+
   return id;
+}
+
+let logDepth = null;
+
+
+/**
+ * Бомбардиры live-слоя. Считаются заново из match_events каждый проход — иначе
+ * повторный инжест добавлял бы по голу за каждый запуск.
+ */
+function rebuildEspnScorers({ log = () => {} } = {}) {
+  const db = getDb();
+  db.prepare("DELETE FROM scorers WHERE player_id LIKE 'espn:%'").run();
+  const info = db
+    .prepare(
+      `INSERT INTO scorers (competition_id, season_id, player_id, team_id, goals, assists, minutes)
+         SELECT m.competition_id, m.season_id, e.player_id, e.team_id, COUNT(*), 0, 0
+           FROM match_events e
+           JOIN matches m ON m.id = e.match_id
+          WHERE e.player_id LIKE 'espn:%'
+            AND e.type IN ('goal', 'penalty')
+            AND m.competition_id IS NOT NULL AND m.season_id IS NOT NULL
+          GROUP BY m.competition_id, m.season_id, e.player_id, e.team_id`,
+    )
+    .run();
+  if (info.changes) log(`    бомбардиры live-слоя: ${info.changes}`);
 }
 
 function snapshotPath(snapshotsDir, slug) {
@@ -163,6 +305,7 @@ function snapshotPath(snapshotsDir, slug) {
 
 export function ingestEspn({ log = console.log, leagues = ESPN_LEAGUES, snapshotsDir = null, live = true } = {}) {
   const db = getDb();
+  logDepth = (msg) => log(`    протокол · ${msg}`);
   let updated = 0;
   let mode = 'none';
   for (const league of leagues) {
@@ -205,6 +348,7 @@ export function ingestEspn({ log = console.log, leagues = ESPN_LEAGUES, snapshot
       if (upsertEvent(ev, league)) updated += 1;
     }
   }
+  rebuildEspnScorers({ log });
   setMeta('ingest.espn', new Date().toISOString());
   setMeta('ingest.espn.mode', mode);
   const liveCount = db.prepare("SELECT COUNT(*) AS n FROM matches WHERE status = 'live'").get().n;
