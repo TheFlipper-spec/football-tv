@@ -1,0 +1,146 @@
+{
+  "captured_at": "2026-09-06T13:02:00.000Z",
+  "captured_via": "agent web tools (fetch_page) — прямое HTTP-соединение из песочницы заблокировано",
+  "platform": "vk",
+  "source_url": "https://live.vkvideo.ru/app/category/596a416c-76b3-4ec4-bba1-52b3d51378b2",
+  "category": "Футбол",
+  "category_viewers": 5973,
+  "streams": [
+    {
+      "title": "Эвертон – Манчестер Юнайтед | Комментаторы: Андрей Кулязин, Александр Арлашкин",
+      "channel": "ManUtdOne",
+      "url": "https://live.vkvideo.ru/manutdone/stream/sl_234432",
+      "viewers": 908
+    },
+    {
+      "title": "ОРЕНБУРГ - АКРОН | ПРЯМАЯ ТРАНСЛЯЦИЯ",
+      "channel": "футбол Tv#6960243",
+      "url": "https://live.vkvideo.ru/channel37051916/stream/sl_235167",
+      "viewers": 899
+    },
+    {
+      "title": "Прямой эфир | Оренбург - Акрон РПЛ | 06.09.26 14:00 по МСК",
+      "channel": "РПЛ с нами#1810731",
+      "url": "https://live.vkvideo.ru/channel37053454/stream/sl_235297",
+      "viewers": 602
+    },
+    {
+      "title": "Эвертон – Манчестер Юнайтед | ПРЯМАЯ ТРАНСЛЯЦИЯ | АПЛ Навсегда",
+      "channel": "АПЛ Навсегда",
+      "url": "https://live.vkvideo.ru/apl_navsegda/stream/sl_234223",
+      "viewers": 542
+    },
+    {
+      "title": "Эвертон – Манчестер Юнайтед | Прямая Трансляция | АПЛ, 3 тур 06.09.26",
+      "channel": "BBET| SPORT & MEDIA",
+      "url": "https://live.vkvideo.ru/channel31819971/stream/sl_235107",
+      "viewers": 405
+    },
+    {
+      "title": "3 тур АПЛ | Эвертон - Манчестер Юнайтед | прямая трансляция | 06.09.2026 в 16:00 мск",
+      "channel": "Смотри ЛЧ | Футбол",
+      "url": "https://live.vkvideo.ru/channel35759963/stream/sl_228354",
+      "viewers": 335
+    },
+    {
+      "title": "Эвертон - МЮ | ПРЯМАЯ ТРАНСЛЯЦИЯ | АПЛ 3 тур",
+      "channel": "FootballMike",
+      "url": "https://live.vkvideo.ru/channel36642664/stream/sl_224801",
+      "viewers": 246
+    },
+    {
+      "title": "Оренбург - Акрон | Прямая трансляция | Эфир РПЛ 06.09.2026",
+      "channel": "Дом футбола 001",
+      "url": "https://live.vkvideo.ru/channel37047014/stream/sl_234775",
+      "viewers": 240
+    },
+    {
+      "title": "Футбол. Эвертон - Манчестер Юнайтед. Английская Премьер-лига",
+      "channel": "Vital Sport Футбол АПЛ",
+      "url": "https://live.vkvideo.ru/vitalsportbasic/stream/sl_234596",
+      "viewers": 199
+    },
+    {
+      "title": "Футбол. Бирмингем Сити - Вулверхэмптон Уондерерс. Английский Чемпионшип",
+      "channel": "Vital Sport Футбол АПЛ",
+      "url": "https://live.vkvideo.ru/vitalsportbasic/stream/birmingham-wolverhampton",
+      "viewers": 142
+    },
+    {
+      "title": "Оренбург - Акрон | РПЛ 7 тур | 06.09.26 14:00 по МСК",
+      "channel": "Смотрим РПЛ#3399059",
+      "url": "https://live.vkvideo.ru/channel37053631/stream/sl_235315",
+      "viewers": 138
+    },
+    {
+      "title": "Эвертон - Манчестер Юнайтед",
+      "channel": "Девушка у микрофона",
+      "url": "https://live.vkvideo.ru/channel35402269/stream/sl_234794",
+      "viewers": 80
+    },
+    {
+      "title": "Прямой эфир | Оренбург - Акрон РПЛ | 06.09.26 14:00 по МСК",
+      "channel": "РПЛ с нами#1810731",
+      "url": "https://live.vkvideo.ru/channel37053454/stream/sl_235302",
+      "viewers": 75
+    },
+    {
+      "title": "«Темп» (Барнаул) – «Рассвет» (Красноярск) | Третья Лига Сибирь «Золото» | 6 сентября",
+      "channel": "Трансляции СФФ Сибирь",
+      "url": "https://live.vkvideo.ru/channel33566207/stream/sl_223099",
+      "viewers": 65
+    },
+    {
+      "title": "СпортмастерPRO-Городская лига - 2 Тур | Stelkon - АБКФ",
+      "channel": "Ассоциация мини-футбола",
+      "url": "https://live.vkvideo.ru/channel31796811/stream/sl_225812",
+      "viewers": 56
+    },
+    {
+      "title": "Оренбург - Акрон | Прямая трансляция",
+      "channel": "Дом футбола 002",
+      "url": "https://live.vkvideo.ru/channel37022011/stream/sl_234786",
+      "viewers": 54
+    },
+    {
+      "title": "Плей-ин за 5-8-е места. Кубок ОФФ «Северо-Запад» среди мальчиков до 12 лет",
+      "channel": "ОФФ Северо-Запад",
+      "url": "https://live.vkvideo.ru/channel29995277/stream/sl_233411",
+      "viewers": 53
+    },
+    {
+      "title": "Эвертон - Манчестер Юнайтед | Прямая трансляция Live | 3-й тур АПЛ | На Русском Языке",
+      "channel": "Comeback United",
+      "url": "https://live.vkvideo.ru/comebackunited/stream/sl_235312",
+      "viewers": 48
+    },
+    {
+      "title": "ЮФЛ Центр U-16. 25 тур. ОК СШОР «Металлург» - СШ «Витязь»",
+      "channel": "ЮФЛ Центр | Трансляции матчей",
+      "url": "https://live.vkvideo.ru/channel34337877/stream/sl_219052",
+      "viewers": 45
+    },
+    {
+      "title": "Эвертон - Манчестер Юнайтед Прямая Трансляция | АПЛ 3 тур 06.09.2026",
+      "channel": "Футбольная Лента АПЛ",
+      "url": "https://live.vkvideo.ru/football_lenta_live/stream/sl_234913",
+      "viewers": 44
+    }
+  ],
+  "side_streams": [
+    {
+      "title": "Stanizlavsky LIVE",
+      "channel": "Stanizlavsky LIVE",
+      "url": "https://live.vkvideo.ru/stanizlavskylive/stream/sl_222991",
+      "viewers": 11000,
+      "category": "Другие виды спорта"
+    },
+    {
+      "title": "F1 Commentators News/Live",
+      "channel": "F1 Commentators News/Live",
+      "url": "https://live.vkvideo.ru/f1commentatorsnews/stream/sl_235132",
+      "viewers": 4145,
+      "category": "Другие виды спорта"
+    }
+  ]
+}

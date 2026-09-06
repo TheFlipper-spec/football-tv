@@ -1,0 +1,22 @@
+# Зависимости
+node_modules/
+
+# Кэш внешних датасетов (клонируется командой npm run ingest)
+.cache/
+
+# База данных собирается из реальных источников командой `npm run ingest`
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
+# Сборка фронтенда
+dist/
+
+# Логи
+*.log
+npm-debug.log*
+
+# Системное
+.DS_Store
+.idea/
+.vscode/
