@@ -1,0 +1,73 @@
+name: Сайт на GitHub Pages
+
+# GitHub Pages отдаёт только файлы, поэтому сайт публикуется статическим
+# снимком: база собирается из реальных источников, ответы API раскладываются
+# по JSON (npm run export:static), фронтенд читает их вместо /api/*.
+# Расписание обновляет данные без сервера — этот workflow и есть «автообновление».
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Каждые 30 минут: заново обходятся VK Видео Live, OK Видео и ESPN,
+    # снимок пересобирается и публикуется.
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Одновременные публикации не нужны: пропускаем следующую, пока идёт текущая.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Клонированные датасеты (openfootball, StatsBomb) тяжёлые — держим их в
+      # кеше. ensureRepo() сам подтягивает последние коммиты, поэтому кеш
+      # не превращается в устаревшие данные.
+      - name: Кеш внешних датасетов
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: sources-${{ github.run_id }}
+          restore-keys: sources-
+
+      - name: Сборка базы из реальных источников
+        run: npm run ingest
+
+      - name: Сборка сайта и снимка API
+        run: npm run build:pages
+
+      - name: Настройка Pages
+        uses: actions/configure-pages@v5
+
+      - name: Публикация артефакта
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Деплой на Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
