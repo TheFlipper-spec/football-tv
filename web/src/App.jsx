@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter, NavLink, Route, Routes, Link } from 'react-router-dom';
+import { HashRouter, NavLink, Route, Routes, Link } from 'react-router-dom';
 import { api } from './api.js';
 import { useTicker, fmtTime, plural } from './utils.jsx';
 import Home from './pages/Home.jsx';
@@ -67,6 +67,10 @@ function Shell() {
   const liveCount = overview?.live?.filter((m) => m.status === 'live').length || 0;
   const captured = overview?.sources?.['ingest.streams'];
   const refreshInfo = overview?.refresh;
+  // В статическом снимке (GitHub Pages) сервера нет: данные обновляет сборка
+  // сайта, а не запрос в браузере. Говорим об этом прямо, чтобы «автообновление
+  // каждые 10 мин» не обещало того, чего на Pages не существует.
+  const snapshot = overview?.snapshot;
 
   return (
     <>
@@ -92,13 +96,31 @@ function Shell() {
                   <b>{liveCount}</b> в эфире · <b>{overview.streams?.length || 0}</b> потоков
                 </div>
                 <div>
-                  {new Date(overview.now).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
-                  {refreshInfo?.interval_minutes
-                    ? ` · автообновление каждые ${refreshInfo.interval_minutes} мин`
-                    : ' · VK Видео Live / OK Видео'}
+                  {snapshot
+                    ? `снимок данных от ${new Date(snapshot.generated_at).toLocaleString('ru-RU', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}`
+                    : `${new Date(overview.now).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}${
+                        refreshInfo?.interval_minutes
+                          ? ` · автообновление каждые ${refreshInfo.interval_minutes} мин`
+                          : ' · VK Видео Live / OK Видео'
+                      }`}
                 </div>
-                <button type="button" className="btn btn-sm refresh-btn" onClick={forceRefresh} disabled={refreshing}>
-                  {refreshing ? 'Обновляем…' : '⟳ Обновить'}
+                <button
+                  type="button"
+                  className="btn btn-sm refresh-btn"
+                  onClick={forceRefresh}
+                  disabled={refreshing}
+                  title={
+                    snapshot
+                      ? 'Перечитать снимок. Данные на этой копии сайта обновляет сборка, а не запрос в браузере.'
+                      : 'Заново обойти VK Видео Live, OK Видео и ESPN'
+                  }
+                >
+                  {refreshing ? 'Обновляем…' : snapshot ? '⟳ Перечитать' : '⟳ Обновить'}
                 </button>
               </>
             ) : (
@@ -145,9 +167,13 @@ function Shell() {
 }
 
 export default function App() {
+  // HashRouter: на GitHub Pages нет сервера, который отдал бы index.html на
+  // произвольный путь, поэтому маршруты живут после «#». Ссылки вида
+  // /football-tv/matches всё равно работают — dist/404.html перенаправляет
+  // путь в хеш.
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Shell />
-    </BrowserRouter>
+    </HashRouter>
   );
 }

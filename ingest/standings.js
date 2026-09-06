@@ -5,7 +5,6 @@ import { getDb, setMeta } from '../server/db.js';
 
 export function buildStandings({ log = console.log } = {}) {
   const db = getDb();
-  db.exec('DELETE FROM standings');
   const seasons = db.prepare('SELECT DISTINCT season_id FROM matches WHERE season_id IS NOT NULL').all();
 
   const insert = db.prepare(
@@ -19,6 +18,9 @@ export function buildStandings({ log = console.log } = {}) {
   const commit = db.prepare('COMMIT');
   tx.run();
   try {
+    // Удаление — внутри транзакции: иначе читатель увидит пустую таблицу
+    // на всё время пересчёта (это секунды на 7 тысячах строк).
+    db.exec('DELETE FROM standings');
     for (const { season_id: seasonId } of seasons) {
       const competitionId = db
         .prepare('SELECT competition_id FROM seasons WHERE id = ?')

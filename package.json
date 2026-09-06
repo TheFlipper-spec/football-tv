@@ -8,16 +8,20 @@
     "node": ">=22.5"
   },
   "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server/index.js",
+    "dev": "vite --config vite.config.js",
     "ingest": "node --disable-warning=ExperimentalWarning ingest/index.js",
     "ingest:openfootball": "node --disable-warning=ExperimentalWarning ingest/index.js --only=openfootball",
     "ingest:statsbomb": "node --disable-warning=ExperimentalWarning ingest/index.js --only=statsbomb",
     "ingest:streams": "node --disable-warning=ExperimentalWarning ingest/index.js --only=streams",
     "ingest:live": "node --disable-warning=ExperimentalWarning ingest/index.js --only=espn",
     "build": "vite build",
-    "start": "node --disable-warning=ExperimentalWarning server/index.js",
-    "dev": "vite --config vite.config.js",
+    "build:pages": "VITE_BASE=/football-tv/ vite build && node --disable-warning=ExperimentalWarning scripts/export-static.js --base=/football-tv/",
+    "export:static": "node --disable-warning=ExperimentalWarning scripts/export-static.js",
+    "serve:static": "node --disable-warning=ExperimentalWarning scripts/serve-static.js",
     "test": "node --test tests/*.test.js",
-    "test:smoke": "esbuild scripts/smoke.jsx --bundle --platform=node --format=esm --jsx=automatic --outfile=.cache/smoke.mjs --log-level=error --external:react --external:react-dom --external:react-router-dom --external:jsdom && node .cache/smoke.mjs"
+    "test:smoke": "esbuild scripts/smoke.jsx --bundle --platform=node --format=esm --jsx=automatic --outfile=.cache/smoke.mjs --log-level=error --external:react --external:react-dom --external:react-router-dom --external:jsdom && node .cache/smoke.mjs",
+    "test:smoke:static": "esbuild scripts/smoke.jsx --bundle --platform=node --format=esm --jsx=automatic --outfile=.cache/smoke-static.mjs --log-level=error --external:react --external:react-dom --external:react-router-dom --external:jsdom --define:import.meta.env.BASE_URL='\"/football-tv/\"' && STATIC=1 ORIGIN=http://127.0.0.1:8090 PAGE_URL=http://127.0.0.1:8090/football-tv/ node .cache/smoke-static.mjs"
   },
   "dependencies": {
     "express": "^4.21.2"

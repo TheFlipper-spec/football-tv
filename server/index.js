@@ -83,6 +83,10 @@ function attachStreams(matches) {
   return matches.map((m) => ({ ...m, streams: byMatch.get(m.id) || [] }));
 }
 
+// Сколько матчей сезона отдаёт /api/competitions/:id (см. комментарий там же).
+const SEASON_RESULTS_WINDOW = 24;
+const SEASON_UPCOMING_WINDOW = 20;
+
 function listMatches(params, limit = 200) {
   const where = [];
   const values = [];
@@ -370,19 +374,28 @@ app.get('/api/competitions/:id', (req, res) => {
       )
     : [];
 
-  const rounds = seasonId
-    ? all(
-        `SELECT COALESCE(m.round, 'Без тура') AS round, MIN(m.kickoff_utc) AS first_kickoff, COUNT(*) AS n
-           FROM matches m WHERE m.season_id = ? GROUP BY m.round ORDER BY MIN(m.kickoff_utc)`,
-        [seasonId],
-      )
-    : [];
+  /*
+   * Странице турнира нужны 16 последних результатов и 12 ближайших матчей, а не
+   * весь сезон: отдавать 500 строк на каждый сезон — это ~550 КБ на запрос и
+   * десятки мегабайт в статическом снимке для GitHub Pages. Окно берём с
+   * запасом, а полные счётчики сезона уже есть в `seasons` (matches / played).
+   */
+  const seasonMatches = seasonId ? listMatches({ season: seasonId }, 500) : [];
+  const matches = attachStreams([
+    ...seasonMatches.filter((m) => m.home_score != null).slice(0, SEASON_RESULTS_WINDOW),
+    ...seasonMatches.filter((m) => m.home_score == null).slice(0, SEASON_UPCOMING_WINDOW),
+  ]);
 
-  const matches = seasonId
-    ? attachStreams(listMatches({ season: seasonId }, 500))
-    : [];
-
-  res.json({ competition: c, seasons, seasonId, standings, scorers, rounds, matches });
+  res.json({
+    competition: c,
+    seasons,
+    seasonId,
+    standings,
+    scorers,
+    matches,
+    matches_total: seasonMatches.length,
+    played_total: seasonMatches.filter((m) => m.status === 'finished').length,
+  });
 });
 
 /* ------------------------------- teams ------------------------------ */

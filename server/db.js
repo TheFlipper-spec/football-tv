@@ -247,6 +247,32 @@ export function bulkInsert(sql, rows) {
   return n;
 }
 
+/**
+ * Выполняет fn внутри одной транзакции.
+ *
+ * Производные таблицы (связи трансляций, турнирные таблицы) пересобираются
+ * как «удалить всё и вставить заново». Без транзакции читатель — сайт или
+ * экспорт статического снимка — может попасть в середину пересборки и увидеть
+ * наполовину собранные данные: матч без трансляций, пустую таблицу.
+ * BEGIN IMMEDIATE, чтобы два прохода инжеста не пересобирали таблицу одновременно.
+ */
+export function withTransaction(fn) {
+  const db = getDb();
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const result = fn(db);
+    db.exec('COMMIT');
+    return result;
+  } catch (err) {
+    try {
+      db.exec('ROLLBACK');
+    } catch {
+      /* транзакция уже откатилась */
+    }
+    throw err;
+  }
+}
+
 export function tableCount(table) {
   const row = getDb().prepare(`SELECT COUNT(*) AS n FROM ${table}`).get();
   return row.n;

@@ -50,6 +50,23 @@ function git(args, cwd) {
 function ensureRepo(dir, url, { blobless = false, sparse = null } = {}) {
   if (fs.existsSync(path.join(dir, '.git'))) {
     log(`  кэш найден: ${path.basename(dir)}`);
+    /*
+     * Кеш может быть вчерашним — а расписание в openfootball меняется.
+     * Пробуем подтянуть последние коммиты; без сети молча остаёмся на кеше.
+     * Клон только читается, поэтому reset --hard здесь безопасен.
+     */
+    try {
+      git(['fetch', '--quiet', 'origin'], dir);
+      const branch = execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
+        cwd: dir,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }).trim();
+      git(['reset', '--hard', '--quiet', `origin/${branch}`], dir);
+      log('  подтянуты последние коммиты источника');
+    } catch {
+      log('  источник не обновился (нет сети?) — работаем с кэшем');
+    }
     return dir;
   }
   fs.mkdirSync(CACHE, { recursive: true });

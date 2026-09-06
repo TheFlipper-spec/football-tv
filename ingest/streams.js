@@ -9,7 +9,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { getDb, setMeta } from '../server/db.js';
+import { getDb, setMeta, withTransaction } from '../server/db.js';
 import { slug } from '../lib/names.js';
 import { matchStream, teamAliases } from '../lib/matcher.js';
 
@@ -120,23 +120,33 @@ export function rebuildMatchStreams({ windowHoursBefore = 6, windowHoursAfter = 
   const teams = db.prepare('SELECT id, name, name_ru, short_name FROM teams').all();
   const aliasesByTeam = new Map(teams.map((t) => [t.id, teamAliases(t)]));
 
-  db.exec('DELETE FROM match_streams');
   const streams = db.prepare('SELECT * FROM streams').all();
-  const insert = db.prepare(
-    `INSERT INTO match_streams (stream_id, match_id, score, method) VALUES (?, ?, ?, ?)
-     ON CONFLICT(stream_id, match_id) DO UPDATE SET score = excluded.score`,
-  );
 
-  let links = 0;
-  const matchedStreams = new Set();
-  for (const stream of streams) {
-    const found = matchStream(stream, matches, aliasesByTeam);
-    for (const f of found) {
-      insert.run(stream.id, f.matchId, f.score, `title-match:${f.matched}teams`);
-      links += 1;
-      matchedStreams.add(stream.id);
+  /*
+   * Удаление и вставка — одна транзакция. Иначе сайт, открытый в момент
+   * автообновления, видит таблицу связей наполовину пустой: матч теряет
+   * трансляции и выпадает из featured. Ровно так снимок для GitHub Pages
+   * однажды собрался с другим главным матчем.
+   */
+  const { links, matchedStreams } = withTransaction((tx) => {
+    tx.exec('DELETE FROM match_streams');
+    const insert = tx.prepare(
+      `INSERT INTO match_streams (stream_id, match_id, score, method) VALUES (?, ?, ?, ?)
+       ON CONFLICT(stream_id, match_id) DO UPDATE SET score = excluded.score`,
+    );
+    let n = 0;
+    const seen = new Set();
+    for (const stream of streams) {
+      const found = matchStream(stream, matches, aliasesByTeam);
+      for (const f of found) {
+        insert.run(stream.id, f.matchId, f.score, `title-match:${f.matched}teams`);
+        n += 1;
+        seen.add(stream.id);
+      }
     }
-  }
+    return { links: n, matchedStreams: seen };
+  });
+
   setMeta('streams.matched_at', new Date().toISOString());
   log(`  связи трансляций: ${links} (${matchedStreams.size} из ${streams.length} трансляций)`);
   return { links, matched: matchedStreams.size, streams: streams.length };
