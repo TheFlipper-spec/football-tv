@@ -2,14 +2,15 @@ import express from 'express';
 import path from 'node:path';
 import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
-import { getDb, allMeta } from './db.js';
+import { getDb, allMeta, ROOT } from './db.js';
 import { refreshState, refreshNow, startAutoRefresh } from './refresh.js';
 import { minuteFromKickoff } from '../lib/time.js';
 
 const app = express();
 const PORT = Number(process.env.PORT || 8080);
 const HOST = process.env.HOST || '0.0.0.0';
-const DIST = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', 'dist');
+// В собранном exe фронтенд лежит в FOOTBALL_TV_ROOT/dist (см. server/db.js).
+const DIST = path.join(ROOT, 'dist');
 
 app.disable('x-powered-by');
 app.use((req, res, next) => {
@@ -498,7 +499,7 @@ app.get('/api/health', (req, res) => {
 // Эмблемы лежат в web/public и попадают в dist при сборке. Раздаём их и из
 // исходного каталога: dev-сервер Vite и смоук-тест ходят за ними прямо в API,
 // а фронтенд может быть ещё не собран.
-const PUBLIC_CRESTS = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', 'web', 'public', 'crests');
+const PUBLIC_CRESTS = path.join(ROOT, 'web', 'public', 'crests');
 if (fs.existsSync(PUBLIC_CRESTS)) app.use('/crests', express.static(PUBLIC_CRESTS));
 
 if (fs.existsSync(DIST)) {

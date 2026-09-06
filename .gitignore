@@ -12,6 +12,9 @@ data/*.db-wal
 # Сборка фронтенда
 dist/
 
+# Сборка исполняемого файла (npm run exe)
+sea/out/
+
 # Логи
 *.log
 npm-debug.log*

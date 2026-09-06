@@ -10,6 +10,47 @@ import TournamentPage from './pages/TournamentPage.jsx';
 import Streams from './pages/Streams.jsx';
 import TeamPage from './pages/TeamPage.jsx';
 
+/** Полоска прогресса чтения под верхней шапкой. */
+function ScrollProgress() {
+  const [p, setP] = useState(0);
+  useEffect(() => {
+    const onScroll = () => {
+      const el = document.documentElement;
+      const max = el.scrollHeight - el.clientHeight;
+      setP(max > 0 ? (el.scrollTop / max) * 100 : 0);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, []);
+  return <div className="scroll-progress" style={{ width: `${p}%` }} aria-hidden="true" />;
+}
+
+/** Кнопка «наверх» — появляется после прокрутки. */
+function ToTop() {
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setShow((window.scrollY || document.documentElement.scrollTop) > 600);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+  return (
+    <button
+      type="button"
+      className={`to-top ${show ? 'show' : ''}`}
+      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      aria-label="Наверх"
+    >
+      ↑
+    </button>
+  );
+}
+
 function Ticker({ overview }) {
   useTicker(30000);
   const items = overview?.live?.length ? overview.live : overview?.upcoming?.slice(0, 12) || [];
@@ -76,6 +117,8 @@ function Shell() {
     <>
       <div className="backdrop" />
       <div className="grain" />
+      <ScrollProgress />
+      <ToTop />
 
       <header className="topbar">
         <div className="topbar-inner">

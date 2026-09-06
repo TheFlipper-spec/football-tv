@@ -3,8 +3,18 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-export const ROOT = path.resolve(__dirname, '..');
+// Внутри собранного exe (SEA) esbuild заменяет import.meta на пустой объект,
+// поэтому import.meta.url может быть undefined — тогда берём рабочий каталог.
+const __dirname = import.meta.url
+  ? path.dirname(fileURLToPath(import.meta.url))
+  : path.resolve(process.cwd(), 'server');
+/**
+ * Корень приложения. По умолчанию — каталог на уровень выше server/ (репозиторий).
+ * В собранном исполняемом файле (SEA) код живёт внутри бинарника, поэтому
+ * `__dirname`/`import.meta.url` указывают не на данные — лаунчер задаёт
+ * FOOTBALL_TV_ROOT в каталог с распакованными данными (dist/, data/).
+ */
+export const ROOT = process.env.FOOTBALL_TV_ROOT || path.resolve(__dirname, '..');
 export const DB_PATH = process.env.FOOTBALL_DB || path.join(ROOT, 'data', 'football.db');
 
 export const SCHEMA = `

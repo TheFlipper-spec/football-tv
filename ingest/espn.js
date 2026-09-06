@@ -9,6 +9,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { isSea } from 'node:sea';
 import { getDb, setMeta } from '../server/db.js';
 import { upsertTeam } from './teams.js';
 import { teamAliases } from '../lib/matcher.js';
@@ -29,7 +30,17 @@ export const ESPN_LEAGUES = [
   { slug: 'uefa.europa', name: 'UEFA Europa League', ru: 'Лига Европы', tz: 'Europe/Berlin', accent: '#ff6a00', kind: 'international' },
 ];
 
+/** Внутри собранного exe (SEA) — process.execPath это сам бинарник, не node. */
+const EMBEDDED = typeof isSea === 'function' && isSea();
+
+/**
+ * Синхронный запрос к ESPN Site API с жёстким таймаутом (дочерний node-процесс).
+ * В собранном exe живые источники не обходятся — живой слой берётся из снимков.
+ */
 function getJson(url) {
+  if (EMBEDDED) {
+    throw new Error(`нет доступа к ESPN (в exe живые источники отключены — используется снимок)`);
+  }
   const script = `
     fetch(${JSON.stringify(url)}, { headers: { 'user-agent': 'Mozilla/5.0 (football-tv ingest)', accept: 'application/json' } })
       .then(async r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })

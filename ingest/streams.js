@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import { isSea } from 'node:sea';
 import { getDb, setMeta, withTransaction } from '../server/db.js';
 import { slug } from '../lib/names.js';
 import { matchStream, teamAliases } from '../lib/matcher.js';
@@ -426,8 +427,20 @@ export function ingestStreams({ snapshotsDir, live = true, log = console.log }) 
   return { total, mode, ...linked };
 }
 
-/** Синхронный fetch — нужен только в скрипте инжеста. */
+/** Внутри собранного exe (SEA) — process.execPath это сам бинарник, не node. */
+const EMBEDDED = typeof isSea === 'function' && isSea();
+
+/**
+ * Синхронный fetch с жёстким таймаутом — нужен только в скрипте инжеста.
+ *
+ * Поднимается дочерний node-процесс, чтобы таймаут был жёстким. В собранном
+ * исполняемом файле отдельного интерпретатора нет, поэтому там живые источники
+ * не обходятся: трансляции честно берутся из встроенных реальных снимков.
+ */
 function fetchSync(url) {
+  if (EMBEDDED) {
+    throw new Error(`нет доступа к ${url} (в exe живые источники отключены — используется снимок)`);
+  }
   const script = `
     fetch(${JSON.stringify(url)}, { headers: { 'user-agent': 'Mozilla/5.0 (football-tv ingest)' } })
       .then(r => r.text())
@@ -447,3 +460,4 @@ function fetchSync(url) {
     throw new Error(`нет доступа к ${url} (${err.code || 'offline'})`);
   }
 }
+

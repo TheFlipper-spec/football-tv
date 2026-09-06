@@ -1,6 +1,42 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Crest, StatusBadge, fmtTime, fmtDayLabel, startsIn, useTicker, matchTeams, fmtViewers, plural, streamEmbedSrc, platformMeta } from './utils.jsx';
+import { Crest, StatusBadge, fmtTime, fmtDayLabel, startsIn, useTicker, matchTeams, fmtViewers, plural, streamEmbedSrc, platformMeta, useFavorites, formFromResults } from './utils.jsx';
+
+/** Кнопка «в избранное» для команды — звёздочка, сохраняется на устройстве. */
+export function StarButton({ id, label = 'В избранное' }) {
+  const { has, toggle } = useFavorites();
+  const on = has(id);
+  return (
+    <button
+      type="button"
+      className={`star-btn ${on ? 'on' : ''}`}
+      aria-pressed={on}
+      title={on ? 'Убрать из избранного' : label}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggle(id);
+      }}
+    >
+      <span className="star-glyph">{on ? '★' : '☆'}</span>
+      <span className="star-text">{on ? 'В избранном' : label}</span>
+    </button>
+  );
+}
+
+/** Индикатор формы команды: пять последних результатов (победа/ничья/поражение). */
+export function FormDots({ results, teamId, size = 'sm' }) {
+  const form = formFromResults(results, teamId);
+  if (!form.length) return null;
+  const label = { W: 'победа', D: 'ничья', L: 'поражение' };
+  return (
+    <span className={`form-dots ${size}`} aria-label={`Форма: ${form.map((f) => label[f]).join(', ')}`}>
+      {form.map((f, i) => (
+        <span key={`${i}-${f}`} className={`form-dot ${f.toLowerCase()}`} title={`${f === 'W' ? 'Победа' : f === 'D' ? 'Ничья' : 'Поражение'}`} />
+      ))}
+    </span>
+  );
+}
 
 export function MatchRow({ m, showLeague = true }) {
   useTicker(1000);

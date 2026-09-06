@@ -17,6 +17,7 @@
     "ingest:live": "node --disable-warning=ExperimentalWarning ingest/index.js --only=espn",
     "build": "vite build",
     "build:pages": "VITE_BASE=/football-tv/ vite build && node --disable-warning=ExperimentalWarning scripts/export-static.js --base=/football-tv/",
+    "exe": "node sea/build.mjs",
     "export:static": "node --disable-warning=ExperimentalWarning scripts/export-static.js",
     "serve:static": "node --disable-warning=ExperimentalWarning scripts/serve-static.js",
     "test": "node --test tests/*.test.js",
@@ -29,6 +30,7 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
     "jsdom": "^26.1.0",
+    "postject": "^1.0.0-alpha.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.0",

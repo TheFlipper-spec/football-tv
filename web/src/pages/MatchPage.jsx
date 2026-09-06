@@ -5,7 +5,7 @@ import {
   useData, useTicker, Crest, matchTeams, fmtTime, fmtDayLabel, startsIn,
   STAT_LABELS, STAT_ORDER, EVENT_META, fmtViewers, plural, streamEmbedSrc, platformMeta,
 } from '../utils.jsx';
-import { MatchList, SectionHead, Loading, ErrorBox } from '../components.jsx';
+import { MatchList, SectionHead, Loading, ErrorBox, StarButton } from '../components.jsx';
 
 /**
  * Заглушка пустой вкладки. Важно не просто сказать «нет данных», а увести туда,
@@ -268,8 +268,19 @@ function TvTab({ streams, match }) {
 export default function MatchPage() {
   const { id } = useParams();
   const [tab, setTab] = useState(null); // null — вкладка ещё не выбрана ни пользователем, ни данными
+  const [copied, setCopied] = useState(false);
   const { data, loading, error } = useData(() => api.match(id), [id], { intervalMs: 30_000 });
   useTicker(1000);
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false); // буфер обмена недоступен — ссылка и так в адресной строке
+    }
+  };
 
   // Стартовая вкладка — по данным: у календарного матча без протокола, но с
   // эфирами сразу открываем «Трансляцию», а не пустые «События».
@@ -374,13 +385,18 @@ export default function MatchPage() {
           <span className="badge">источник: {m.source}</span>
         </div>
 
-        {data.streams?.length > 0 && (
-          <div className="row gap-8 mt-16" style={{ justifyContent: 'center' }}>
-            <button className="btn btn-vk" onClick={() => setTab('tv')}>
+        <div className="row gap-8 mt-16 wrap" style={{ justifyContent: 'center' }}>
+          <StarButton id={m.home_id} label={`Следить за «${home}»`} />
+          <StarButton id={m.away_id} label={`Следить за «${away}»`} />
+          <button type="button" className="btn btn-sm btn-ghost" onClick={copyLink}>
+            {copied ? 'Ссылка скопирована ✓' : '🔗 Поделиться матчем'}
+          </button>
+          {data.streams?.length > 0 && (
+            <button className="btn btn-vk btn-sm" onClick={() => setTab('tv')}>
               ▶ {data.streams.length} {plural(data.streams.length, 'трансляция', 'трансляции', 'трансляций')}
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <div className="tabs">

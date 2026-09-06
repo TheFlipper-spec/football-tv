@@ -1,8 +1,8 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../api.js';
-import { useData, Crest, plural } from '../utils.jsx';
-import { MatchList, SectionHead, Loading, ErrorBox } from '../components.jsx';
+import { useData, Crest, plural, formFromResults } from '../utils.jsx';
+import { MatchList, SectionHead, Loading, ErrorBox, StarButton, FormDots } from '../components.jsx';
 
 export default function TeamPage() {
   const { id } = useParams();
@@ -13,18 +13,28 @@ export default function TeamPage() {
 
   const t = data.team;
   const name = t.name_ru || t.name;
+  const form = formFromResults(data.results, t.id);
 
   return (
     <div className="fade-in">
       <div className="hero">
-        <div className="row gap-8" style={{ alignItems: 'center' }}>
-          <Crest name={name} short={t.short_name} color={t.primary_color} src={t.crest_url} size="crest-lg" />
-          <div>
-            <h1 className="page-h1">{name}</h1>
-            <p className="muted small" style={{ margin: '6px 0 0' }}>
-              {t.name}{t.country ? ` · ${t.country}` : ''} · {data.results.length + data.upcoming.length} матчей в подборке
-            </p>
+        <div className="row-between wrap" style={{ alignItems: 'center' }}>
+          <div className="row gap-8" style={{ alignItems: 'center' }}>
+            <Crest name={name} short={t.short_name} color={t.primary_color} src={t.crest_url} size="crest-lg" />
+            <div>
+              <h1 className="page-h1">{name}</h1>
+              <p className="muted small" style={{ margin: '6px 0 0' }}>
+                {t.name}{t.country ? ` · ${t.country}` : ''} · {data.results.length + data.upcoming.length} матчей в подборке
+              </p>
+              {form.length > 0 && (
+                <div className="row gap-8" style={{ marginTop: 8 }}>
+                  <span className="muted small">Форма:</span>
+                  <FormDots results={data.results} teamId={t.id} />
+                </div>
+              )}
+            </div>
           </div>
+          <StarButton id={t.id} label="Следить за командой" />
         </div>
       </div>
 
