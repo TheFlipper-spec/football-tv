@@ -1,0 +1,82 @@
+name: Сборка исполняемых файлов (exe)
+
+# База из реальных источников + фронтенд вшиваются прямо в бинарник.
+# Запуск: Actions → «Сборка исполняемых файлов (exe)» → Run workflow,
+# либо автоматически при публикации релиза (exe прикрепляется к релизу).
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            artifact: football-tv-windows
+            exe: football-tv.exe
+          - os: ubuntu-latest
+            artifact: football-tv-linux
+            exe: football-tv
+          - os: macos-latest
+            artifact: football-tv-macos
+            exe: football-tv-macos
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Клонированные датасеты (openfootball, StatsBomb) тяжёлые — держим в кеше.
+      - name: Кеш внешних датасетов
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: sources-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: sources-${{ runner.os }}-
+
+      - name: Сборка базы из реальных источников
+        run: npm run ingest
+
+      - name: Сборка фронтенда
+        run: npm run build
+
+      - name: Сборка исполняемого файла
+        run: npm run exe
+
+      - name: Собрать пакет для скачивания
+        shell: bash
+        run: |
+          mkdir -p dist-pkg
+          cp "sea/out/${{ matrix.exe }}" dist-pkg/
+          cp README.md dist-pkg/ 2>/dev/null || true
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cp sea/launch-silent.vbs "dist-pkg/Запустить ФУТБОЛ.TV (без окна).vbs" 2>/dev/null || \
+              cp sea/launch-silent.vbs dist-pkg/launch-silent.vbs
+          fi
+
+      - name: Выложить артефакт
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist-pkg/
+          if-no-files-found: error
+
+      - name: Прикрепить к релизу
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: sea/out/${{ matrix.exe }}
