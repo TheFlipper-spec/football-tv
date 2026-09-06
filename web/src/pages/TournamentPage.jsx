@@ -28,7 +28,7 @@ export default function TournamentPage() {
         <div className="row-between wrap">
           <div>
             <div className="badge">{c.kind === 'cup' ? 'кубок' : c.kind === 'international' ? 'международный турнир' : 'лига'}{c.country_ru ? ` · ${c.country_ru}` : ''}</div>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 30, margin: '12px 0 6px', letterSpacing: '-0.02em' }}>
+            <h1 className="page-h1" style={{ margin: '12px 0 6px' }}>
               {c.name_ru || c.name}
             </h1>
             <p className="muted small" style={{ margin: 0 }}>

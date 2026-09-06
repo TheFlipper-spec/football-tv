@@ -325,12 +325,12 @@ export default function MatchPage() {
           <Link to={`/team/${encodeURIComponent(m.home_id)}`} className="hero-team">
             <Crest name={home} short={homeShort} color={m.home_color} src={homeSrc} size="crest-lg" />
             <div>
-              <div className="name" style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600 }}>{home}</div>
+              <div className="name mh-team-name">{home}</div>
               <div className="sub muted small">{m.home_name}</div>
             </div>
           </Link>
 
-          <div className="hero-score" style={{ fontSize: 48 }}>
+          <div className="hero-score mh-score">
             {hasScore ? <>{m.home_score}<span className="dash">:</span>{m.away_score}</> : 'vs'}
             {m.ht_home != null && (
               <div className="muted small" style={{ fontFamily: 'var(--font-body)', fontSize: 12, marginTop: 8 }}>
@@ -342,7 +342,7 @@ export default function MatchPage() {
           <Link to={`/team/${encodeURIComponent(m.away_id)}`} className="hero-team away">
             <Crest name={away} short={awayShort} color={m.away_color} src={awaySrc} size="crest-lg" />
             <div>
-              <div className="name" style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600 }}>{away}</div>
+              <div className="name mh-team-name">{away}</div>
               <div className="sub muted small">{m.away_name}</div>
             </div>
           </Link>

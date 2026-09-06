@@ -83,7 +83,7 @@ function Shell() {
             <span className="logo-mark"><span>⚽</span></span>
             ФУТБОЛ<em>.TV</em>
           </Link>
-          <nav className="nav">
+          <nav className="nav" aria-label="Основная навигация">
             <NavLink to="/" end>Главная</NavLink>
             <NavLink to="/live">Трансляции</NavLink>
             <NavLink to="/matches">Матчи</NavLink>
@@ -162,6 +162,14 @@ function Shell() {
           </div>
         </footer>
       </main>
+
+      {/* Нижняя навигация — только на телефонах (см. styles.css) */}
+      <nav className="bottom-nav" aria-label="Навигация">
+        <NavLink to="/" end><span className="bn-icon">🏠</span>Главная</NavLink>
+        <NavLink to="/live"><span className="bn-icon">📺</span>Эфиры</NavLink>
+        <NavLink to="/matches"><span className="bn-icon">⚽</span>Матчи</NavLink>
+        <NavLink to="/tournaments"><span className="bn-icon">🏆</span>Турниры</NavLink>
+      </nav>
     </>
   );
 }
