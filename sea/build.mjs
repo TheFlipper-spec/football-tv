@@ -21,6 +21,7 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
+import * as esbuild from 'esbuild';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'sea', 'out');
@@ -71,25 +72,36 @@ function run(cmd, args, opts = {}) {
   execFileSync(cmd, args, { stdio: 'inherit', ...opts });
 }
 
+/**
+ * Запускает JS-скрипт интерпретатором node.
+ *
+ * ВАЖНО для Windows: `execFileSync` не умеет исполнять `.cmd`/`.bat`-шимсы из
+ * node_modules/.bin (например postject.cmd) — они требуют cmd.exe. Поэтому
+ * вызываем саму JS-точку входа через node, а не файл-обёртку. Работает
+ * одинаково на Windows, Linux и macOS.
+ */
+function runNode(script, args, opts = {}) {
+  run(process.execPath, [script, ...args], opts);
+}
+
 async function build() {
   fs.rmSync(OUT, { recursive: true, force: true });
   fs.mkdirSync(OUT, { recursive: true });
 
   log('▸ 1/4 Склейка сервера (esbuild)');
-  run(
-    path.join(ROOT, 'node_modules', '.bin', process.platform === 'win32' ? 'esbuild.cmd' : 'esbuild'),
-    [
-      path.join(ROOT, 'sea', 'entry.js'),
-      '--bundle',
-      '--platform=node',
-      '--format=cjs',
-      '--target=node22',
-      '--outfile=' + path.join(OUT, 'bundle.cjs'),
-      '--external:node:sqlite',
-      '--external:node:sea',
-      '--log-level=warning',
-    ],
-  );
+  // Используем JS API esbuild напрямую: его bin/esbuild — это нативный бинарник
+  // (ELF на Linux, .exe на Windows), и пути к нему различаются между ОС.
+  await esbuild.build({
+    entryPoints: [path.join(ROOT, 'sea', 'entry.js')],
+    bundle: true,
+    platform: 'node',
+    format: 'cjs',
+    target: 'node22',
+    outfile: path.join(OUT, 'bundle.cjs'),
+    external: ['node:sqlite', 'node:sea'],
+    logLevel: 'warning',
+    absWorkingDir: ROOT,
+  });
 
   log('▸ 2/4 Сбор данных');
   const files = collectFiles();
@@ -130,8 +142,8 @@ async function build() {
   const exeName = process.platform === 'win32' ? 'football-tv.exe' : process.platform === 'darwin' ? 'football-tv-macos' : 'football-tv';
   const exePath = path.join(OUT, exeName);
   fs.copyFileSync(process.execPath, exePath);
-  run(
-    path.join(ROOT, 'node_modules', '.bin', process.platform === 'win32' ? 'postject.cmd' : 'postject'),
+  runNode(
+    path.join(ROOT, 'node_modules', 'postject', 'dist', 'cli.js'),
     [
       exePath,
       'NODE_SEA_BLOB',
