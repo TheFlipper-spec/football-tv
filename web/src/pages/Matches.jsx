@@ -10,6 +10,7 @@ const RANGES = [
   { id: 'week', label: 'Неделя', days: 7 },
   { id: 'month', label: 'Месяц', days: 30 },
   { id: 'all', label: 'С трансляциями', streams: true },
+  { id: 'depth', label: 'С протоколом', depth: true, past: true },
   { id: 'history', label: 'Результаты', past: true },
 ];
 
@@ -34,6 +35,7 @@ export default function Matches() {
     if (competition) p.competition = competition;
     if (r.live) p.status = 'live';
     if (r.streams) p.withStreams = '1';
+    if (r.depth) p.withDepth = '1';
     if (r.past) {
       p.to = new Date().toISOString();
       p.order = 'desc';

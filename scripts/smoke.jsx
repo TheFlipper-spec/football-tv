@@ -161,9 +161,38 @@ expect(!!meta.refresh && meta.refresh.interval_minutes > 0, 'автообнов�
 const refreshed = await (await fetch(ORIGIN + '/api/refresh', { method: 'POST' })).json();
 expect(refreshed.runs >= 1 && !refreshed.last_error, `POST /api/refresh прошёл (${refreshed.streams} трансляций, ${refreshed.matched} связей, режим ${refreshed.streams_mode})`);
 
+// --- вкладки матча: события, составы, статистика должны РЕАЛЬНО рендериться ---
+const clickTab = async (label) => {
+  const btn = [...document.querySelectorAll('.tabs .tab')].find((b) => (b.textContent || '').startsWith(label));
+  if (!btn) return null;
+  await act(async () => { btn.dispatchEvent(new window.MouseEvent('click', { bubbles: true })); });
+  await settle(250);
+  return text();
+};
+
 const sb = await visit('/match/statsbomb:3857266', 1200);
 console.log(`  /match/<statsbomb>   ${sb.text.length} символов текста`);
-expect(/Франция|Дания|Марсьяль|xG/i.test(sb.text), '/match StatsBomb — глубокая статистика');
+const tabsLine = [...document.querySelectorAll('.tabs .tab')].map((b) => b.textContent).join(' | ');
+console.log(`    вкладки: ${tabsLine}`);
+expect(/События · \d+/.test(tabsLine), 'вкладка «События» знает число событий');
+
+const evTab = await clickTab('События');
+expect(evTab && /Christensen|Koundé|Mbappé/.test(evTab), 'События: тайлайн с игроками и минутами отрисован');
+const luTab = await clickTab('Составы');
+expect(luTab && /в старте/.test(luTab) && /Lloris|Griezmann|Schmeichel/.test(luTab), 'Составы: стартовый состав с номерами отрисован');
+const stTab = await clickTab('Статистика');
+expect(stTab && /Владение/.test(stTab) && /xG/.test(stTab) && /Удары/.test(stTab), 'Статистика: владение, xG, удары отрисованы');
+
+// матч без протокола: пустая вкладка должна объяснять и вести туда, где протокол есть
+const plain = await visit('/match/' + overview.featured.id, 1200);
+const emptyTab = await clickTab('События');
+expect(emptyTab && /StatsBomb/.test(emptyTab), 'пустая вкладка объясняет, откуда берутся протоколы');
+expect(!!document.querySelector('main a[href="/matches"]'), 'из пустой вкладки есть переход к матчам с протоколом');
+
+// на главной раздел «Матчи с протоколом» должен быть виден
+const home2 = await visit('/', 1200);
+expect(home2.text.includes('Матчи с протоколом'), '/ — раздел «Матчи с протоколом» на главной');
+expect(/badge-depth|протокол/.test(home2.html), '/ — у матчей с протоколом стоит значок');
 
 await act(async () => root.unmount());
 console.log(failures.length ? `\nПРОВАЛЕНО: ${failures.length}` : '\nвсе маршруты отрисовались без ошибок');

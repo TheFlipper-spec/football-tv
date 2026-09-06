@@ -106,14 +106,20 @@ export const EURO_TEXT_LEAGUES = {
 };
 
 /** Турниры StatsBomb (competition_id / season_id). */
+/**
+ * `ru`    — название конкретного розыгрыша («Евро-2024»), уходит в seasons.label_ru.
+ * `ruComp`— название турнира без розыгрыша («Чемпионат Европы»), уходит в
+ *           competitions.name_ru. Раньше в турнир писался `ru`, и из-за этого
+ *           финал Евро-2024 Испания — Англия показывался как «Евро-2020».
+ */
 export const STATSBOMB_COMPETITIONS = {
-  '43/106': { name: 'FIFA World Cup', ru: 'Чемпионат мира 2022', country: 'International', countryRu: 'Мир', kind: 'international', tz: 'Asia/Qatar', accent: '#8c1d40', withEvents: true },
-  '55/282': { name: 'UEFA Euro', ru: 'Евро-2024', country: 'International', countryRu: 'Европа', kind: 'international', tz: 'Europe/Berlin', accent: '#1a2f6b', withEvents: true },
-  '55/43': { name: 'UEFA Euro', ru: 'Евро-2020', country: 'International', countryRu: 'Европа', kind: 'international', tz: 'Europe/Berlin', accent: '#1a2f6b', withEvents: true },
-  '223/282': { name: 'Copa América', ru: 'Копа Америка 2024', country: 'South America', countryRu: 'Южная Америка', kind: 'international', tz: 'America/New_York', accent: '#002868', withEvents: true },
-  '16/4': { name: 'UEFA Champions League', ru: 'Лига чемпионов 2018/19', country: 'Europe', countryRu: 'Европа', kind: 'international', tz: 'Europe/Berlin', accent: '#00204a' },
-  '11/90': { name: 'La Liga', ru: 'Ла Лига 2020/21', country: 'Spain', countryRu: 'Испания', tz: 'Europe/Madrid', accent: '#ff4b44' },
-  '2/27': { name: 'Premier League', ru: 'АПЛ 2015/16', country: 'England', countryRu: 'Англия', tz: 'Europe/London', accent: '#3d195b' },
-  '9/281': { name: '1. Bundesliga', ru: 'Бундеслига 2023/24', country: 'Germany', countryRu: 'Германия', tz: 'Europe/Berlin', accent: '#d20515' },
-  '7/235': { name: 'Ligue 1', ru: 'Лига 1 2022/23', country: 'France', countryRu: 'Франция', tz: 'Europe/Paris', accent: '#091c3e' },
+  '43/106': { ruComp: 'Чемпионат мира', name: 'FIFA World Cup', ru: 'Чемпионат мира 2022', country: 'International', countryRu: 'Мир', kind: 'international', tz: 'Asia/Qatar', accent: '#8c1d40', withEvents: true },
+  '55/282': { ruComp: 'Чемпионат Европы', name: 'UEFA Euro', ru: 'Евро-2024', country: 'International', countryRu: 'Европа', kind: 'international', tz: 'Europe/Berlin', accent: '#1a2f6b', withEvents: true },
+  '55/43': { ruComp: 'Чемпионат Европы', name: 'UEFA Euro', ru: 'Евро-2020', country: 'International', countryRu: 'Европа', kind: 'international', tz: 'Europe/Berlin', accent: '#1a2f6b', withEvents: true },
+  '223/282': { ruComp: 'Копа Америка', name: 'Copa América', ru: 'Копа Америка 2024', country: 'South America', countryRu: 'Южная Америка', kind: 'international', tz: 'America/New_York', accent: '#002868', withEvents: true },
+  '16/4': { ruComp: 'Лига чемпионов', name: 'UEFA Champions League', ru: 'Лига чемпионов 2018/19', country: 'Europe', countryRu: 'Европа', kind: 'international', tz: 'Europe/Berlin', accent: '#00204a' },
+  '11/90': { ruComp: 'Ла Лига', name: 'La Liga', ru: 'Ла Лига 2020/21', country: 'Spain', countryRu: 'Испания', tz: 'Europe/Madrid', accent: '#ff4b44' },
+  '2/27': { ruComp: 'Английская Премьер-лига', name: 'Premier League', ru: 'АПЛ 2015/16', country: 'England', countryRu: 'Англия', tz: 'Europe/London', accent: '#3d195b' },
+  '9/281': { ruComp: 'Бундеслига', name: '1. Bundesliga', ru: 'Бундеслига 2023/24', country: 'Germany', countryRu: 'Германия', tz: 'Europe/Berlin', accent: '#d20515' },
+  '7/235': { ruComp: 'Лига 1', name: 'Ligue 1', ru: 'Лига 1 2022/23', country: 'France', countryRu: 'Франция', tz: 'Europe/Paris', accent: '#091c3e' },
 };

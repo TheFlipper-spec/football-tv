@@ -27,7 +27,14 @@ export function MatchRow({ m, showLeague = true }) {
         <Crest name={home} short={homeShort} color={m.home_color} src={homeSrc} />
         <div className="grow">
           <div className="name">{home}</div>
-          {showLeague && <div className="league">{m.competition_name_ru || m.competition_name}</div>}
+          {showLeague && (
+            <div className="league">
+              {m.competition_name_ru || m.competition_name}
+              {m.has_lineups || m.has_stats || m.has_events ? (
+                <span className="badge badge-depth" title="Есть составы, события и статистика">протокол</span>
+              ) : null}
+            </div>
+          )}
         </div>
       </div>
 

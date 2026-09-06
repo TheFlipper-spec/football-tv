@@ -120,6 +120,18 @@ export default function Home() {
         <MatchList matches={(data.live?.length ? data.live : data.upcoming).slice(0, 14)} />
       </section>
 
+      {data.deep?.length ? (
+        <section className="section">
+          <SectionHead
+            title="Матчи с протоколом"
+            count={`${data.deep.length} из 680`}
+            sub="Здесь есть всё: стартовые составы с номерами, поминутные события и матчевая статистика — владение, xG, удары, пасы, обводки, отборы. Это данные StatsBomb Open Data; в календарных матчах openfootball протокола нет."
+            right={<Link className="btn btn-sm" to="/matches">Все с протоколом →</Link>}
+          />
+          <MatchList matches={data.deep} />
+        </section>
+      ) : null}
+
       <section className="section">
         <div className="row gap-8 wrap" style={{ alignItems: 'flex-start' }}>
           <div style={{ flex: '1 1 420px', minWidth: 0 }}>

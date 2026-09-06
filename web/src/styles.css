@@ -961,3 +961,9 @@ footer.foot a { color: var(--muted); text-decoration: underline; text-underline-
 /* Кнопка ручного обновления в шапке */
 .refresh-btn { margin-top: 4px; font-size: 11.5px; padding: 4px 10px; }
 .refresh-btn[disabled] { opacity: .6; cursor: progress; }
+
+/* Значок «протокол» у матчей, где есть составы/события/статистика */
+.badge-depth {
+  margin-left: 6px; font-size: 9.5px; letter-spacing: .04em; text-transform: uppercase;
+  color: #9fe8c0; border-color: rgba(120, 220, 170, .35); background: rgba(40, 130, 90, .22);
+}

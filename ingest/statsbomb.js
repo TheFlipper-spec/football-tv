@@ -309,7 +309,7 @@ export function ingestStatsbomb({ cacheDir, log = console.log, withEvents = true
       `INSERT INTO competitions (id, name, name_ru, country, country_ru, kind, tier, accent)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET name_ru = excluded.name_ru, accent = excluded.accent, kind = excluded.kind`,
-    ).run(compId, meta.name, meta.ru || null, meta.country, meta.countryRu, meta.kind || 'league', 1, meta.accent || null);
+    ).run(compId, meta.name, meta.ruComp || meta.ru || null, meta.country, meta.countryRu, meta.kind || 'league', 1, meta.accent || null);
     db.prepare(
       `INSERT INTO seasons (id, competition_id, name, label_ru, source)
        VALUES (?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET label_ru = excluded.label_ru`,

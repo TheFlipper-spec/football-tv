@@ -117,6 +117,9 @@ function listMatches(params, limit = 200) {
   if (params.withStreams === '1') {
     where.push('m.id IN (SELECT match_id FROM match_streams)');
   }
+  if (params.withDepth === '1') {
+    where.push('(m.has_lineups = 1 OR m.has_stats = 1 OR m.has_events = 1)');
+  }
   const order = params.order === 'desc' ? 'DESC' : 'ASC';
   const sql = `${MATCH_SELECT} ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
     ORDER BY m.kickoff_utc IS NULL, m.kickoff_utc ${order} LIMIT ?`;
@@ -188,6 +191,17 @@ app.get('/api/overview', (req, res) => {
        FROM streams s ORDER BY s.viewers DESC, s.captured_at DESC LIMIT 40`,
   );
 
+  // Матчи с полным протоколом (составы, события, статистика) — их даёт StatsBomb,
+  // и их нужно показывать на виду: иначе пользователь открывает обычный матч
+  // из календаря и видит три пустые вкладки.
+  const deep = decorate(
+    all(
+      `${MATCH_SELECT}
+        WHERE m.has_lineups = 1 AND m.has_events = 1 AND m.has_stats = 1
+        ORDER BY m.kickoff_utc DESC LIMIT 6`,
+    ),
+  );
+
   const scorers = all(
     `SELECT p.name, p.nickname, t.name AS team_name, t.name_ru AS team_name_ru, t.id AS team_id,
             sc.goals, c.name_ru AS competition_name_ru, c.accent, sc.season_id, t.crest_url AS team_crest
@@ -213,6 +227,7 @@ app.get('/api/overview', (req, res) => {
     live: attachStreams(live),
     upcoming: attachStreams(upcoming.slice(0, 24)),
     streams,
+    deep,
     scorers,
     competitions,
     sources: allMeta(),

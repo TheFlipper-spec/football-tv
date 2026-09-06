@@ -7,6 +7,28 @@ import {
 } from '../utils.jsx';
 import { MatchList, SectionHead, Loading, ErrorBox } from '../components.jsx';
 
+/**
+ * Заглушка пустой вкладки. Важно не просто сказать «нет данных», а увести туда,
+ * где протокол есть: календарные матчи openfootball его не содержат в принципе.
+ */
+function NoDepth({ what }) {
+  return (
+    <div className="empty">
+      <b>{what}</b> по этому матчу в источнике нет.
+      <div style={{ marginTop: 8 }}>
+        Этот матч пришёл из календаря openfootball — там есть дата, время, тур, счёт и счёт перерыва,
+        но не протокол. Полные составы, поминутные события и статистика доступны для 680 матчей
+        из StatsBomb Open Data: ЧМ-2022, Евро-2020 и 2024, Копа Америка-2024, а также отдельные
+        сезоны АПЛ, Ла Лиги, Бундеслиги, Лиги 1 и Лиги чемпионов.
+      </div>
+      <div className="row gap-8 mt-16" style={{ justifyContent: 'center' }}>
+        <Link className="btn btn-sm" to="/matches">Матчи с протоколом →</Link>
+        <Link className="btn btn-sm" to="/tournaments">Турниры StatsBomb →</Link>
+      </div>
+    </div>
+  );
+}
+
 const TABS = [
   { id: 'events', label: 'События' },
   { id: 'lineups', label: 'Составы' },
@@ -17,10 +39,7 @@ const TABS = [
 function Timeline({ events, match }) {
   if (!events?.length) {
     return (
-      <div className="empty">
-        Событий по этому матчу в источнике нет. Детальная событийная статистика доступна для турниров из StatsBomb
-        (ЧМ-2022, Евро-2024, Евро-2020, Копа Америка-2024).
-      </div>
+      <NoDepth what="Событий" />
     );
   }
   return (
@@ -52,7 +71,7 @@ function Timeline({ events, match }) {
 
 function Lineups({ lineups, match }) {
   if (!lineups?.length) {
-    return <div className="empty">Составы на матч не опубликованы в источнике данных</div>;
+    return <NoDepth what="Составов" />;
   }
   const byTeam = new Map();
   for (const l of lineups) {
@@ -114,10 +133,7 @@ function Lineups({ lineups, match }) {
 function Stats({ stats, match }) {
   if (!stats?.length) {
     return (
-      <div className="empty">
-        Матчевой статистики в источнике нет. Развёрнутая статистика (владение, xG, удары, пасы, обводки) доступна
-        для турниров из StatsBomb.
-      </div>
+      <NoDepth what="Матчевой статистики" />
     );
   }
   const map = new Map();
