@@ -1130,3 +1130,221 @@ footer.foot a { color: var(--muted); text-decoration: underline; text-underline-
 }
 .goal-chip b { color: var(--gold); font-variant-numeric: tabular-nums; }
 .goal-chip em { font-style: normal; color: var(--muted); font-size: 11.5px; }
+
+/* ==========================================================================
+   Прокачка: избранное, форма, поиск, скролл-бар, доступность, микро-анимации
+   ========================================================================== */
+
+/* ---------- Избранное (звёздочка) ---------- */
+.star-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 700;
+  transition: transform 0.16s, background 0.16s, border-color 0.16s, color 0.16s, box-shadow 0.16s;
+  white-space: nowrap;
+}
+.star-btn:hover { transform: translateY(-1px); border-color: rgba(255, 200, 87, 0.55); color: var(--gold); }
+.star-btn .star-glyph { font-size: 15px; line-height: 1; transition: transform 0.18s; }
+.star-btn:hover .star-glyph { transform: scale(1.18) rotate(8deg); }
+.star-btn.on {
+  background: rgba(255, 200, 87, 0.14);
+  border-color: rgba(255, 200, 87, 0.5);
+  color: var(--gold);
+  box-shadow: 0 8px 24px -14px rgba(255, 200, 87, 0.7);
+}
+.star-btn.on .star-glyph { text-shadow: 0 0 14px rgba(255, 200, 87, 0.8); }
+
+/* ---------- Индикатор формы (W/D/L) ---------- */
+.form-dots { display: inline-flex; gap: 4px; align-items: center; }
+.form-dot {
+  width: 11px; height: 11px; border-radius: 50%;
+  background: var(--panel-2);
+  border: 1px solid var(--line-strong);
+}
+.form-dot.w { background: rgba(0, 255, 163, 0.85); border-color: transparent; box-shadow: 0 0 8px -2px rgba(0, 255, 163, 0.8); }
+.form-dot.d { background: rgba(255, 200, 87, 0.85); border-color: transparent; box-shadow: 0 0 8px -2px rgba(255, 200, 87, 0.8); }
+.form-dot.l { background: rgba(255, 59, 92, 0.85); border-color: transparent; box-shadow: 0 0 8px -2px rgba(255, 59, 92, 0.8); }
+.form-dots.lg .form-dot { width: 14px; height: 14px; }
+
+/* ---------- Панель инструментов матчей (поиск + фильтры) ---------- */
+.matches-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.search-box {
+  position: relative;
+  flex: 1 1 280px;
+  max-width: 460px;
+  display: flex;
+  align-items: center;
+}
+.search-box .search-icon {
+  position: absolute;
+  left: 14px;
+  font-size: 13px;
+  pointer-events: none;
+  opacity: 0.75;
+}
+.search-box input[type='search'] {
+  width: 100%;
+  padding: 11px 38px 11px 40px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+  transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
+  outline: none;
+}
+.search-box input[type='search']::placeholder { color: var(--muted-2); }
+.search-box input[type='search']:focus {
+  border-color: rgba(0, 255, 163, 0.55);
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: 0 0 0 4px rgba(0, 255, 163, 0.12);
+}
+.search-box input[type='search']::-webkit-search-cancel-button { -webkit-appearance: none; }
+.search-clear {
+  position: absolute;
+  right: 8px;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  transition: background 0.16s, color 0.16s;
+}
+.search-clear:hover { background: rgba(255, 255, 255, 0.18); color: var(--text); }
+
+/* ---------- Скролл-прогресс и «наверх» ---------- */
+.scroll-progress {
+  position: fixed;
+  top: 0; left: 0;
+  height: 2px;
+  z-index: 100;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  box-shadow: 0 0 12px rgba(0, 255, 163, 0.55);
+  transition: width 0.08s linear;
+  pointer-events: none;
+}
+
+.to-top {
+  position: fixed;
+  right: 18px;
+  bottom: 86px;
+  z-index: 80;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: rgba(10, 14, 24, 0.82);
+  backdrop-filter: blur(12px);
+  color: var(--text);
+  font-size: 17px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 14px 34px -14px rgba(0, 0, 0, 0.9);
+  transition: transform 0.18s, background 0.18s, opacity 0.18s;
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+}
+.to-top.show { opacity: 1; transform: none; pointer-events: auto; }
+.to-top:hover { transform: translateY(-2px); background: rgba(0, 255, 163, 0.14); border-color: rgba(0, 255, 163, 0.5); }
+
+/* ---------- Доступность: видимый фокус ---------- */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ---------- Живой матч в списке: цветная плашка слева ---------- */
+.match-row { position: relative; }
+.match-row::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 12%; bottom: 12%;
+  width: 3px;
+  border-radius: 0 4px 4px 0;
+  background: transparent;
+  transition: background 0.2s;
+}
+.match-row:has(.badge-live)::before {
+  background: linear-gradient(180deg, var(--live), #ff6b86);
+  box-shadow: 0 0 12px rgba(255, 59, 92, 0.6);
+}
+.match-row:has(.badge-live) {
+  background: linear-gradient(90deg, rgba(255, 59, 92, 0.06), transparent 60%);
+}
+
+/* ---------- Статистика: подсветить лидера по строке ---------- */
+.stat-row { position: relative; border-radius: 10px; transition: background 0.2s; }
+.stat-row:hover { background: rgba(255, 255, 255, 0.03); }
+
+/* ---------- Hero: лёгкое дыхание света ---------- */
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: -60% -30%;
+  background: conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(0, 255, 163, 0.06) 40deg, transparent 90deg);
+  animation: heroSheen 12s linear infinite;
+  pointer-events: none;
+}
+@keyframes heroSheen {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- Карточки турниров и трансляций: глубина ---------- */
+.comp-card { transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s, box-shadow 0.22s; }
+.comp-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--line-strong);
+  box-shadow: 0 26px 50px -30px rgba(0, 0, 0, 0.9);
+}
+.stream-card { transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s, box-shadow 0.22s; }
+
+/* ---------- Кнопки: лёгкий блеск на hover ---------- */
+.btn { position: relative; overflow: hidden; }
+.btn::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -120%;
+  width: 60%; height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.16), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.5s ease;
+}
+.btn:hover::after { left: 130%; }
+.btn:disabled::after { display: none; }
+
+/* ---------- Пустые состояния с иконкой ---------- */
+.empty { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.empty::before { content: '⚽'; font-size: 26px; opacity: 0.6; }
+
+@media (max-width: 560px) {
+  .matches-tools { gap: 8px; }
+  .search-box { flex: 1 1 100%; max-width: none; }
+  .to-top { right: 12px; bottom: 78px; width: 40px; height: 40px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero::after { animation: none; }
+  .btn::after { display: none; }
+}

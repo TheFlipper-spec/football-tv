@@ -11,11 +11,10 @@
  * (115 тысяч матчей в базе), а текущие игры поверх обновляет ESPN.
  */
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { ingestStreams, rebuildMatchStreams } from '../ingest/streams.js';
 import { ingestEspn } from '../ingest/espn.js';
+import { ROOT } from './db.js';
 
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SNAPSHOTS = path.join(ROOT, 'data', 'snapshots');
 
 const state = {

@@ -8,7 +8,7 @@
 [![матчей в базе](https://img.shields.io/badge/матчей-115_066-0b6bcb?style=flat-square)](#откуда-берутся-данные)
 [![турниров](https://img.shields.io/badge/турниров-86-0b6bcb?style=flat-square)](#откуда-берутся-данные)
 [![эфиров VK/OK](https://img.shields.io/badge/эфиров-27-ff4b44?style=flat-square)](#откуда-берутся-данные)
-[![тесты](https://img.shields.io/badge/тесты-23%2F23-1a7f37?style=flat-square)](#проверки)
+[![тесты](https://img.shields.io/badge/тесты-31%2F31-1a7f37?style=flat-square)](#проверки)
 
 ---
 
@@ -40,10 +40,56 @@ npm run dev          # Vite на :5173, проксирует /api → 127.0.0.1:
 Тесты:
 
 ```bash
-npm test             # 23 юнит-теста на node:test
+npm test             # 31 юнит-тест на node:test
 npm run test:smoke   # монтирует настоящее приложение в jsdom и проходит все 9 маршрутов
                      # (нужен запущенный `npm start`)
 ```
+
+---
+
+## Настольное приложение (один файл `.exe`)
+
+Сайт можно собрать в **единый исполняемый файл** — без Node, Python или базы
+рядом. Внутри бинарника: Express-сервер, вся база из реальных источников
+(115 000+ матчей, составы, статистика) и фронтенд. При двойном клике exe
+поднимает сервер на `http://localhost:8080` и сам открывает сайт в браузере.
+
+```bash
+npm run ingest      # собрать базу из реальных источников
+npm run build       # собрать фронтенд
+npm run exe         # собрать sea/out/football-tv[.exe] под текущую ОС
+```
+
+Как это устроено (`sea/`):
+
+* `sea/entry.js` — точка входа exe: при первом старте распаковывает встроенные
+  данные в каталог пользователя (`%LOCALAPPDATA%\football-tv` на Windows,
+  `~/.local/share/football-tv` на Linux, `~/Library/Application Support/football-tv`
+  на macOS), направляет сервер на них и открывает браузер. Повторный запуск
+  данные не распаковывает (сверяется версия манифеста).
+* `sea/build.mjs` — сборка: esbuild склеивает сервер в один CJS-бандл, данные
+  (frontend, `data/football.db`, снимки) вшиваются в бинарник ассетами Node SEA
+  (база сжимается gzip), готовый `sea-prep.blob` впрыскивается в копию Node
+  через postject.
+* `sea/launch-silent.vbs` — для Windows: запуск exe без консольного окна.
+
+Особенности exe:
+
+* **Данные — встроенный реальный снимок** на момент сборки. Внутри бинарника
+  нет отдельного интерпретатора node, поэтому живые источники (VK Видео Live,
+  OK Видео, ESPN) в exe не обходятся — сайт честно показывает снимок, как на
+  GitHub Pages. Пересобрать exe со свежими данными: `npm run ingest && npm run build && npm run exe`.
+* Настройка через переменные окружения: `PORT`, `HOST`, `FOOTBALL_TV_DATA`
+  (каталог данных), `FOOTBALL_TV_NO_OPEN=1` (не открывать браузер),
+  `REFRESH_MINUTES` (период автообновления; по умолчанию 0 — выключено).
+
+### Сборка exe в GitHub Actions
+
+Готовый workflow `.github/workflows/build-exe.yml` собирает исполняемый файл
+под **Windows, Linux и macOS** и выкладывает его как артефакт (а при публикации
+релиза — прикрепляет к релизу). Запускается вручную: **Actions → «Сборка
+исполняемых файлов (exe)» → Run workflow**. Итоговый `.exe` скачивается со
+страницы завершённого запуска.
 
 ---
 
@@ -179,7 +225,7 @@ npm run serve:static   # локальная копия Pages на :8090 для �
 ## Проверки
 
 ```bash
-npm test                  # 23 юнит-теста: нормализация имён, матчер трансляций, парсеры, минуты, API
+npm test                  # 31 юнит-тест: нормализация имён, матчер трансляций, парсеры, минуты, API
 npm run test:smoke        # настоящее приложение в jsdom, все маршруты (Express + SQLite)
 npm run test:smoke:static # то же самое против статического снимка (нужен npm run serve:static)
 npm run build             # сборка фронтенда в dist/
@@ -276,6 +322,10 @@ scripts/
   export-static.js  снимок API в dist/data/ для GitHub Pages
   serve-static.js   локальная копия Pages (без /api) для проверки
   smoke.jsx         смоук-тест: рендер всех маршрутов в jsdom
+sea/             сборка единого исполняемого файла (Node SEA)
+  entry.js          точка входа exe: распаковка данных, запуск сервера, браузер
+  build.mjs         `npm run exe` — склейка сервера и вшивание данных в бинарник
+  launch-silent.vbs тихий запуск exe на Windows без консоли
 web/             фронтенд: Vite + React
   src/staticApi.js  статический двойник API (читает снимок)
 data/snapshots/  реальные снимки трансляций

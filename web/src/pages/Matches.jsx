@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { api } from '../api.js';
-import { useData, fmtDayLabel } from '../utils.jsx';
+import { useData, fmtDayLabel, useFavorites, plural } from '../utils.jsx';
 import { MatchList, SectionHead, Loading, ErrorBox } from '../components.jsx';
 
 const RANGES = [
@@ -31,6 +31,9 @@ function groupByDay(matches) {
 export default function Matches() {
   const [range, setRange] = useState('week');
   const [competition, setCompetition] = useState('');
+  const [query, setQuery] = useState('');
+  const [favOnly, setFavOnly] = useState(false);
+  const { favs, has } = useFavorites();
   const { data: comps } = useData(() => api.competitions(), []);
 
   const params = useMemo(() => {
@@ -62,11 +65,30 @@ export default function Matches() {
     .sort((a, b) => (b.played - a.played) || (b.matches - a.matches))
     .slice(0, 14);
 
+  // Быстрый поиск по уже загруженному окну + фильтр «мои команды». Поиск идёт
+  // по названиям команд, турниру и туру; 400 строк фильтруются мгновенно.
+  const visible = useMemo(() => {
+    const list = data?.matches || [];
+    const q = query.trim().toLowerCase();
+    return list.filter((m) => {
+      if (favOnly && !has(m.home_id) && !has(m.away_id)) return false;
+      if (!q) return true;
+      const hay = [
+        m.home_name_ru, m.home_name, m.away_name_ru, m.away_name,
+        m.competition_name_ru, m.competition_name, m.round, m.stage,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  }, [data, query, favOnly, has]);
+
   return (
     <div className="fade-in">
       <SectionHead
         title="Матчи"
-        count={data?.matches?.length}
+        count={data ? visible.length : undefined}
         sub="Полный календарь и результаты. Все матчи — реальные, из открытых источников; таймеры считаются от настоящего времени начала."
       />
 
@@ -76,6 +98,32 @@ export default function Matches() {
             {r.label}
           </button>
         ))}
+      </div>
+
+      <div className="matches-tools">
+        <div className="search-box">
+          <span className="search-icon">🔍</span>
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Поиск по команде или турниру…"
+            aria-label="Поиск по команде или турниру"
+          />
+          {query && (
+            <button type="button" className="search-clear" onClick={() => setQuery('')} aria-label="Очистить поиск">
+              ✕
+            </button>
+          )}
+        </div>
+        <button
+          type="button"
+          className={`chip ${favOnly ? 'active' : ''} ${favs.size ? '' : 'muted'}`}
+          onClick={() => setFavOnly((v) => !v)}
+          title={favs.size ? `Показать матчи ${favs.size} ${plural(favs.size, 'команды', 'команд', 'команд')} из избранного` : 'Добавьте команды в избранное на странице клуба или матча'}
+        >
+          ⭐ Мои команды{favs.size ? ` (${favs.size})` : ''}
+        </button>
       </div>
 
       <div className="chips" style={{ marginBottom: 22 }}>
@@ -97,8 +145,19 @@ export default function Matches() {
       {error && <ErrorBox error={error} />}
       {data && !loading && (
         <>
-          {data.matches.length === 0 && <div className="empty">На выбранный период матчей нет</div>}
-          {groupByDay(data.matches).map(([day, list]) => (
+          {favOnly && favs.size === 0 && (
+            <div className="notice">
+              В избранном пока нет команд. Добавьте клубы звёздочкой ⭐ на странице команды или матча — и они появятся здесь.
+            </div>
+          )}
+          {visible.length === 0 && (
+            <div className="empty">
+              {query || favOnly
+                ? 'По этому фильтру матчей нет — измените поиск или период.'
+                : 'На выбранный период матчей нет'}
+            </div>
+          )}
+          {groupByDay(visible).map(([day, list]) => (
             <div className="day-group" key={day}>
               <h3 className="day-title">{fmtDayLabel(list[0].kickoff_utc) || 'Без даты'}</h3>
               <MatchList matches={list} showLeague />

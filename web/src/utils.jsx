@@ -245,6 +245,72 @@ export const STAT_ORDER = [
   'yellow_cards', 'red_cards',
 ];
 
+/* ============================= Избранные команды ============================= */
+
+const FAV_KEY = 'football-tv:favorites';
+const FAV_EVENT = 'football-tv:favorites';
+
+function readFavorites() {
+  try {
+    const raw = JSON.parse(window.localStorage.getItem(FAV_KEY) || '[]');
+    return new Set(Array.isArray(raw) ? raw.filter((x) => typeof x === 'string') : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function persistFavorites(set) {
+  try {
+    window.localStorage.setItem(FAV_KEY, JSON.stringify([...set]));
+    window.dispatchEvent(new CustomEvent(FAV_EVENT));
+  } catch {
+    /* приватный режим — избранное просто не сохранится */
+  }
+}
+
+/**
+ * Избранные команды (id клубов) с сохранением в localStorage и синхронизацией
+ * между вкладками. Работает на любом экране без сервера — это часть клиента.
+ */
+export function useFavorites() {
+  const [favs, setFavs] = useState(() => readFavorites());
+  useEffect(() => {
+    const onChange = () => setFavs(readFavorites());
+    window.addEventListener(FAV_EVENT, onChange);
+    window.addEventListener('storage', onChange);
+    return () => {
+      window.removeEventListener(FAV_EVENT, onChange);
+      window.removeEventListener('storage', onChange);
+    };
+  }, []);
+  const toggle = (id) => {
+    if (!id) return;
+    setFavs((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      persistFavorites(next);
+      return next;
+    });
+  };
+  return { favs, toggle, has: (id) => favs.has(id) };
+}
+
+/** Последние 5 результатов команды → строка «W D L W W» для индикатора формы. */
+export function formFromResults(results, teamId) {
+  return (results || [])
+    .filter((m) => m.home_score != null && m.away_score != null && (m.home_id === teamId || m.away_id === teamId))
+    .slice(0, 5)
+    .map((m) => {
+      const isHome = m.home_id === teamId;
+      const gf = isHome ? m.home_score : m.away_score;
+      const ga = isHome ? m.away_score : m.home_score;
+      if (gf > ga) return 'W';
+      if (gf < ga) return 'L';
+      return 'D';
+    });
+}
+
 export const EVENT_META = {
   goal: { icon: '⚽', cls: 'goal', label: 'гол' },
   penalty: { icon: '⚽', cls: 'goal', label: 'пенальти' },
