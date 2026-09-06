@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Crest, StatusBadge, fmtTime, fmtDayLabel, startsIn, useTicker, matchTeams, fmtViewers, plural, streamEmbedSrc } from './utils.jsx';
+import { Crest, StatusBadge, fmtTime, fmtDayLabel, startsIn, useTicker, matchTeams, fmtViewers, plural, streamEmbedSrc, platformMeta } from './utils.jsx';
 
 export function MatchRow({ m, showLeague = true }) {
   useTicker(1000);
@@ -98,8 +98,8 @@ export function StreamModal({ stream, onClose }) {
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
           <div>
-            <span className={`badge ${stream.platform === 'ok' ? 'badge-ok' : 'badge-vk'}`}>
-              {stream.platform === 'ok' ? 'OK Видео' : 'VK Видео Live'}
+            <span className={`badge ${platformMeta(stream.platform).badge}`}>
+              {platformMeta(stream.platform).label}
             </span>{' '}
             {stream.is_live ? <span className="badge badge-live"><span className="dot-live" /> live</span> : null}
             <h3>{stream.title}</h3>
@@ -142,7 +142,7 @@ export function StreamModal({ stream, onClose }) {
             {copied ? 'Скопировано ✓' : 'Скопировать ссылку'}
           </button>
           <a
-            className={`btn btn-sm ${stream.platform === 'ok' ? 'btn-ok' : 'btn-vk'}`}
+            className={`btn btn-sm ${platformMeta(stream.platform).btn}`}
             href={stream.url}
             target="_blank"
             rel="noreferrer noopener"
@@ -163,16 +163,16 @@ export function StreamCard({ s }) {
     e.preventDefault();
     setModal(true);
   };
-  const isOk = s.platform === 'ok';
+  const meta = platformMeta(s.platform);
   const viewers = fmtViewers(s.viewers);
   const matched = s.matches?.length ? s.matches : s.match_id ? [s] : [];
   const first = matched[0];
 
   return (
-    <article className={`stream-card ${isOk ? 'ok' : ''}`}>
+    <article className={`stream-card ${s.platform === 'ok' ? 'ok' : ''} ${s.platform === 'matchtv' ? 'matchtv' : ''}`}>
       <div className="stream-top">
-        <span className={`badge ${isOk ? 'badge-ok' : 'badge-vk'}`}>
-          {isOk ? 'OK Видео' : 'VK Видео Live'}
+        <span className={`badge ${meta.badge}`}>
+          {meta.label}
         </span>
         <span className="row gap-8">
           {s.is_live ? <span className="badge badge-live"><span className="dot-live" /> live</span> : null}
@@ -198,13 +198,13 @@ export function StreamCard({ s }) {
 
       <div className="stream-actions">
         <a
-          className={`btn btn-sm ${isOk ? 'btn-ok' : 'btn-vk'}`}
+          className={`btn btn-sm ${meta.btn}`}
           href={s.url}
           target="_blank"
           rel="noreferrer noopener"
           onClick={openStream}
         >
-          {isOk ? 'Смотреть в OK' : 'Смотреть в VK'}
+          {meta.watch}
         </a>
         {s.embed_url && <span className="badge" title="Встраиваемый плеер">embed</span>}
         {s.category && <span className="badge">{s.category}</span>}

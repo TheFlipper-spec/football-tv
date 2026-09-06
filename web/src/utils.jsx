@@ -67,6 +67,17 @@ export function startsIn(iso) {
   return `через ${cd}`;
 }
 
+/** Название, короткое имя и css-классы площадки эфира. */
+export function platformMeta(platform) {
+  if (platform === 'ok') {
+    return { label: 'OK Видео', short: 'OK', badge: 'badge-ok', btn: 'btn-ok', watch: 'Смотреть в OK', open: 'Открыть в OK' };
+  }
+  if (platform === 'matchtv') {
+    return { label: 'Матч ТВ', short: 'ТВ', badge: 'badge-matchtv', btn: 'btn-matchtv', watch: 'Смотреть на Матч ТВ', open: 'Открыть на matchtv.ru' };
+  }
+  return { label: 'VK Видео Live', short: 'VK', badge: 'badge-vk', btn: 'btn-vk', watch: 'Смотреть в VK', open: 'Открыть в VK' };
+}
+
 /**
  * Ссылка встраиваемого плеера для эфира.
  *

@@ -1,0 +1,171 @@
+{
+  "captured_at": "2026-09-06T19:30:00.000Z",
+  "captured_via": "agent web tools (fetch_page) — прямое HTTP-соединение из песочницы заблокировано",
+  "platform": "matchtv",
+  "source_url": "https://matchtv.ru/video/channel/matchtv",
+  "note": "«Ближайшие трансляции» на странице канала Матч ТВ: у каждого матча — собственная страница трансляции на matchtv.ru.",
+  "streams": [
+    {
+      "platform": "matchtv",
+      "category": "Матч ТВ — календарь трансляций",
+      "title": "Балтика - Локомотив · Футбол. Альфа-Банк Российская Премьер-Лига. Тур 7",
+      "channel": "Матч ТВ",
+      "url": "https://matchtv.ru/football/rpl/matchtvvideo_NI2358157_translation_Baltika___Lokomotiv_Alfa_Bank_Rossijskaja_Premjer_Liga_Tur_7",
+      "viewers": 0,
+      "is_live": 0
+    },
+    {
+      "platform": "matchtv",
+      "category": "Матч ТВ — календарь трансляций",
+      "title": "Ювентус - Милан · Футбол. Чемпионат Италии. Тур 3",
+      "channel": "Матч ТВ",
+      "url": "https://matchtv.ru/football/italy/matchtvvideo_NI2358164_translation_Juventus___Milan_Chempionat_Italii_Tur_3",
+      "viewers": 0,
+      "is_live": 0
+    },
+    {
+      "platform": "matchtv",
+      "category": "Матч ТВ — календарь трансляций",
+      "title": "Рубин - Ахмат · Футбол. Альфа-Банк Российская Премьер-Лига. Тур 7",
+      "channel": "Матч ТВ",
+      "url": "https://matchtv.ru/football/rpl/matchtvvideo_NI2360548_translation_Rubin___Ahmat_Alfa_Bank_Rossijskaja_Premjer_Liga_Tur_7",
+      "viewers": 0,
+      "is_live": 0
+    },
+    {
+      "platform": "matchtv",
+      "category": "Матч ТВ — календарь трансляций",
+      "title": "Эльче - Реал Сосьедад · Футбол. Чемпионат Испании. Тур 4",
+      "channel": "Матч ТВ",
+      "url": "https://matchtv.ru/football/spain/matchtvvideo_NI2360559_translation_Elche___Real_Sosjedad_Chempionat_Ispanii_Tur_4",
+      "viewers": 0,
+      "is_live": 0
+    },
+    {
+      "platform": "matchtv",
+      "category": "Матч ТВ — календарь трансляций",
+      "title": "Рязань - Спартак Кострома · Футбол. FONBET Кубок России. Путь регионов. Раунд 4",
+      "channel": "Матч ТВ",
+      "url": "https://matchtv.ru/football/rossija/kubok_rossii/matchtvvideo_NI2360576_translation_Razan___Spartak_Kostroma_FONBET_Kubok_Rossii_po_futbolu_sezona_2026___2027_gg_Put_regionov_Raund_4",
+      "viewers": 0,
+      "is_live": 0
+    },
+    {
+      "platform": "matchtv",
+      "category": "Матч ТВ — календарь трансляций",
+      "title": "Текстильщик - Арсенал · Футбол. FONBET Кубок России. Путь регионов. Раунд 4",
+      "channel": "Матч ТВ",
+      "url": "https://matchtv.ru/football/rossija/kubok_rossii/matchtvvideo_NI2360578_translation_Tekstilshhik___Arsenal_FONBET_Kubok_Rossii_po_futbolu_sezona_2026___2027_gg_Put_regionov_Raund_4",
+      "viewers": 0,
+      "is_live": 0
+    },
+    {
+      "platform": "matchtv",
+      "category": "Матч ТВ — календарь трансляций",
+      "title": "Сокол - Ленинградец · Футбол. FONBET Кубок России. Путь регионов. Раунд 4",
+      "channel": "Матч ТВ",
+      "url": "https://matchtv.ru/football/rossija/kubok_rossii/matchtvvideo_NI2360588_translation_Sokol___Leningradec_FONBET_Kubok_Rossii_po_futbolu_sezona_2026___2027_gg_Put_regionov_Raund_4",
+      "viewers": 0,
+      "is_live": 0
+    },
+    {
+      "platform": "matchtv",
+      "category": "Матч ТВ — календарь трансляций",
+      "title": "Дружба - Енисей · Футбол. FONBET Кубок России. Путь регионов. Раунд 4",
+      "channel": "Матч ТВ",
+      "url": "https://matchtv.ru/football/rossija/kubok_rossii/matchtvvideo_NI2360594_translation_Druzhba___Jenisej_FONBET_Kubok_Rossii_po_futbolu_sezona_2026___2027_gg_Put_regionov_Raund_4",
+      "viewers": 0,
+      "is_live": 0
+    },
+    {
+      "platform": "matchtv",
+      "category": "Матч ТВ — календарь трансляций",
+      "title": "Динамо-Барнаул - Челябинск · Футбол. FONBET Кубок России. Путь регионов. Раунд 4",
+      "channel": "Матч ТВ",
+      "url": "https://matchtv.ru/football/rossija/kubok_rossii/matchtvvideo_NI2360622_translation_Dinamo_Barnaul___Chelabinsk_FONBET_Kubok_Rossii_po_futbolu_sezona_2026___2027_gg_Put_regionov_Raund_4",
+      "viewers": 0,
+      "is_live": 0
+    },
+    {
+      "platform": "matchtv",
+      "category": "Матч ТВ — календарь трансляций",
+      "title": "Шинник - Торпедо · Футбол. FONBET Кубок России. Путь регионов. Раунд 4",
+      "channel": "Матч ТВ",
+      "url": "https://matchtv.ru/football/rossija/kubok_rossii/matchtvvideo_NI2360651_translation_Shinnik___Torpedo_FONBET_Kubok_Rossii_po_futbolu_sezona_2026___2027_gg_Put_regionov_Raund_4",
+      "viewers": 0,
+      "is_live": 0
+    },
+    {
+      "platform": "matchtv",
+      "category": "Матч ТВ — календарь трансляций",
+      "title": "Крылья Советов - Родина · Футбол. Альфа-Банк Российская Премьер-Лига. Тур 8",
+      "channel": "Матч ТВ",
+      "url": "https://matchtv.ru/football/rpl/matchtvvideo_NI2360700_translation_Krylja_Sovetov___Rodina_Alfa_Bank_Rossijskaja_Premjer_Liga_Tur_8",
+      "viewers": 0,
+      "is_live": 0
+    },
+    {
+      "platform": "matchtv",
+      "category": "Матч ТВ — календарь трансляций",
+      "title": "Севилья - Валенсия · Футбол. Чемпионат Испании. Тур 5",
+      "channel": "Матч ТВ",
+      "url": "https://matchtv.ru/football/spain/matchtvvideo_NI2360715_translation_Sevilja___Valensija_Chempionat_Ispanii_Tur_5",
+      "viewers": 0,
+      "is_live": 0
+    },
+    {
+      "platform": "matchtv",
+      "category": "Матч ТВ — календарь трансляций",
+      "title": "Факел - Балтика · Футбол. Альфа-Банк Российская Премьер-Лига. Тур 8",
+      "channel": "Матч ТВ",
+      "url": "https://matchtv.ru/football/rpl/matchtvvideo_NI2360751_translation_Fakel___Baltika_Alfa_Bank_Rossijskaja_Premjer_Liga_Tur_8",
+      "viewers": 0,
+      "is_live": 0
+    },
+    {
+      "platform": "matchtv",
+      "category": "Матч ТВ — календарь трансляций",
+      "title": "Зенит - Локомотив · Футбол. Альфа-Банк Российская Премьер-Лига. Тур 8. Трансляция в Ultra HD 4K",
+      "channel": "Матч ТВ",
+      "url": "https://matchtv.ru/football/rpl/matchtvvideo_NI2360768_translation_Zenit___Lokomotiv_Alfa_Bank_Rossijskaja_Premjer_Liga_Tur_8",
+      "viewers": 0,
+      "is_live": 0
+    },
+    {
+      "platform": "matchtv",
+      "category": "Матч ТВ — календарь трансляций",
+      "title": "Динамо - Оренбург · Футбол. Альфа-Банк Российская Премьер-Лига. Тур 8",
+      "channel": "Матч ТВ",
+      "url": "https://matchtv.ru/football/rpl/matchtvvideo_NI2360800_translation_Dinamo___Orenburg_Alfa_Bank_Rossijskaja_Premjer_Liga_Tur_8",
+      "viewers": 0,
+      "is_live": 0
+    },
+    {
+      "platform": "matchtv",
+      "category": "Матч ТВ — календарь трансляций",
+      "title": "Лацио - Милан · Футбол. Чемпионат Италии. Тур 4",
+      "channel": "Матч ТВ",
+      "url": "https://matchtv.ru/football/italy/matchtvvideo_NI2360809_translation_Lacio___Milan_Chempionat_Italii_Tur_4",
+      "viewers": 0,
+      "is_live": 0
+    },
+    {
+      "platform": "matchtv",
+      "category": "Матч ТВ — календарь трансляций",
+      "title": "ЦСКА - Рубин · Футбол. Альфа-Банк Российская Премьер-Лига. Тур 8",
+      "channel": "Матч ТВ",
+      "url": "https://matchtv.ru/football/rpl/matchtvvideo_NI2360817_translation_CSKA___Rubin_Alfa_Bank_Rossijskaja_Premjer_Liga_Tur_8",
+      "viewers": 0,
+      "is_live": 0
+    },
+    {
+      "platform": "matchtv",
+      "category": "Матч ТВ — календарь трансляций",
+      "title": "Реал - Райо Вальекано · Футбол. Чемпионат Испании. Тур 5",
+      "channel": "Матч ТВ",
+      "url": "https://matchtv.ru/football/spain/matchtvvideo_NI2360826_translation_Real___Rajo_Valjekano_Chempionat_Ispanii_Tur_5",
+      "viewers": 0,
+      "is_live": 0
+    }
+  ]
+}

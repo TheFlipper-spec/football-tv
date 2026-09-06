@@ -150,8 +150,9 @@ function Shell() {
               <br />
               Данные: <a href="https://github.com/openfootball" target="_blank" rel="noreferrer">openfootball</a> (календарь и результаты),{' '}
               <a href="https://github.com/statsbomb/open-data" target="_blank" rel="noreferrer">StatsBomb Open Data</a> (составы, события, статистика),{' '}
-              <a href="https://live.vkvideo.ru" target="_blank" rel="noreferrer">VK Видео Live</a> и{' '}
-              <a href="https://ok.ru/video/live" target="_blank" rel="noreferrer">OK Видео</a> (прямые эфиры),{' '}
+              <a href="https://live.vkvideo.ru" target="_blank" rel="noreferrer">VK Видео Live</a>,{' '}
+              <a href="https://ok.ru/video/live" target="_blank" rel="noreferrer">OK Видео</a> и{' '}
+              <a href="https://matchtv.ru/video/channel/matchtv" target="_blank" rel="noreferrer">Матч ТВ</a> (прямые эфиры),{' '}
               ESPN Site API (живой счёт).
             </div>
             <div style={{ textAlign: 'right' }}>

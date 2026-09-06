@@ -18,6 +18,7 @@
   --gold: #ffc857;
   --vk: #0077ff;
   --ok: #ee8208;
+  --matchtv: #e5233d;
   --radius: 18px;
   --radius-sm: 12px;
   --shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.9);
@@ -293,6 +294,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 .btn-vk { background: var(--vk); border-color: transparent; color: #fff; box-shadow: 0 10px 30px -14px rgba(0, 119, 255, 0.9); }
 .btn-ok { background: var(--ok); border-color: transparent; color: #fff; }
+.btn-matchtv { background: var(--matchtv); border-color: transparent; color: #fff; box-shadow: 0 10px 30px -14px rgba(229, 35, 61, 0.9); }
 .btn-sm { padding: 7px 12px; font-size: 12px; }
 .btn-ghost { background: transparent; }
 
@@ -319,6 +321,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .badge-soon { background: rgba(255, 200, 87, 0.12); border-color: rgba(255, 200, 87, 0.32); color: var(--gold); }
 .badge-vk { background: rgba(0, 119, 255, 0.16); border-color: rgba(0, 119, 255, 0.45); color: #7db8ff; }
 .badge-ok { background: rgba(238, 130, 8, 0.16); border-color: rgba(238, 130, 8, 0.45); color: #ffc27d; }
+.badge-matchtv { background: rgba(229, 35, 61, 0.16); border-color: rgba(229, 35, 61, 0.45); color: #ff96a4; }
 
 .dot-live {
   width: 7px;
@@ -514,6 +517,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 
 .stream-card.ok::before { background: linear-gradient(90deg, var(--ok), var(--gold)); }
+.stream-card.matchtv:hover { border-color: rgba(229, 35, 61, 0.45); box-shadow: 0 24px 50px -26px rgba(229, 35, 61, 0.6); }
+.stream-card.matchtv::before { background: linear-gradient(90deg, var(--matchtv), var(--gold)); }
 
 .stream-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 

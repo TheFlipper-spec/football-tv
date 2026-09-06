@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { api } from '../api.js';
 import {
   useData, useTicker, Crest, matchTeams, fmtTime, fmtDayLabel, startsIn,
-  STAT_LABELS, STAT_ORDER, EVENT_META, fmtViewers, plural, streamEmbedSrc,
+  STAT_LABELS, STAT_ORDER, EVENT_META, fmtViewers, plural, streamEmbedSrc, platformMeta,
 } from '../utils.jsx';
 import { MatchList, SectionHead, Loading, ErrorBox } from '../components.jsx';
 
@@ -168,8 +168,8 @@ function TvTab({ streams, match }) {
   if (!streams?.length) {
     return (
       <div className="empty">
-        К этому матчу пока не привязана ни одна трансляция. Сопоставление идёт по названию эфира в VK Видео Live
-        и OK Видео — обновите список командой <code>npm run ingest:streams</code>.
+        К этому матчу пока не привязана ни одна трансляция. Сопоставление идёт по названию эфира в VK Видео Live,
+        OK Видео и календаре Матч ТВ — обновите список командой <code>npm run ingest:streams</code>.
       </div>
     );
   }
@@ -191,16 +191,18 @@ function TvTab({ streams, match }) {
           />
         ) : (
           <div className="player-fallback">
-            <span className={`badge ${s.platform === 'ok' ? 'badge-ok' : 'badge-vk'}`}>
-              {s.platform === 'ok' ? 'OK Видео' : 'VK Видео Live'}
+            <span className={`badge ${platformMeta(s.platform).badge}`}>
+              {platformMeta(s.platform).label}
             </span>
             <div className="big">{s.title}</div>
             <p>
               {s.channel ? `Канал: ${s.channel}. ` : ''}
-              Для этого эфира площадка не отдаёт встраиваемый плеер — он откроется на сайте вещателя.
+              {s.platform === 'matchtv'
+                ? 'Матч ТВ не разрешает встраивать свой плеер на другие сайты — трансляция откроется на matchtv.ru, бесплатно и без регистрации.'
+                : 'Для этого эфира площадка не отдаёт встраиваемый плеер — он откроется на сайте вещателя.'}
               {viewers ? ` Сейчас смотрят: ${viewers}.` : ''}
             </p>
-            <a className={`btn ${s.platform === 'ok' ? 'btn-ok' : 'btn-vk'}`} href={s.url} target="_blank" rel="noreferrer noopener">
+            <a className={`btn ${platformMeta(s.platform).btn}`} href={s.url} target="_blank" rel="noreferrer noopener">
               ▶ Открыть трансляцию
             </a>
           </div>
@@ -215,7 +217,7 @@ function TvTab({ streams, match }) {
             Если плеер не запустился, эфир можно открыть на площадке.
           </div>
           <a className="btn btn-sm" href={s.url} target="_blank" rel="noreferrer noopener">
-            Открыть в {s.platform === 'ok' ? 'OK' : 'VK'} ↗
+            {platformMeta(s.platform).open} ↗
           </a>
         </div>
       )}
@@ -224,7 +226,8 @@ function TvTab({ streams, match }) {
         <div className="chips mt-16">
           {streams.map((st, i) => (
             <button key={st.id} className={`chip ${i === active ? 'active' : ''}`} onClick={() => setActive(i)}>
-              {st.channel || st.platform} {st.viewers ? `· ${fmtViewers(st.viewers)}` : ''}
+              {st.method === 'tv-channel' || st.platform === 'matchtv' ? '📺 ' : ''}{st.channel || st.platform}
+              {st.viewers ? ` · ${fmtViewers(st.viewers)}` : ''}
             </button>
           ))}
         </div>
@@ -238,15 +241,19 @@ function TvTab({ streams, match }) {
               {streams.length} {plural(streams.length, 'трансляция', 'трансляции', 'трансляций')}
             </div>
           </div>
-          <a className="btn btn-sm" href={s.url} target="_blank" rel="noreferrer noopener">Открыть {s.platform.toUpperCase()}</a>
+          <a className="btn btn-sm" href={s.url} target="_blank" rel="noreferrer noopener">{platformMeta(s.platform).open}</a>
         </div>
         <div className="mt-16">
           {streams.map((st) => (
             <div className="scorer-row" key={st.id}>
-              <span className="n">{st.platform === 'ok' ? 'OK' : 'VK'}</span>
+              <span className="n">{platformMeta(st.platform).short}</span>
               <span>
                 <div className="p" style={{ fontSize: 13 }}>{st.title}</div>
-                <div className="t">{st.channel || '—'}</div>
+                <div className="t">
+                  {st.channel || '—'}
+                  {st.method === 'tv-channel' ? ' · официальный эфир телеканала' : ''}
+                  {st.platform === 'matchtv' && st.method !== 'tv-channel' ? ' · трансляция на сайте канала' : ''}
+                </div>
               </span>
               <span className="t">{fmtViewers(st.viewers) || ''}</span>
               <a className="badge" href={st.url} target="_blank" rel="noreferrer noopener">смотреть</a>

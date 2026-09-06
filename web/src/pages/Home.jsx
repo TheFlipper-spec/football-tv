@@ -100,7 +100,7 @@ export default function Home() {
         <SectionHead
           title="Сейчас в эфире"
           count={`${data.streams?.length || 0} потоков`}
-          sub="Прямые трансляции из VK Видео Live и OK Видео. Список привязывается к реальным матчам по названию эфира."
+          sub="Прямые трансляции из VK Видео Live, OK Видео и с сайта Матч ТВ. Список привязывается к реальным матчам по названию эфира."
           right={<Link className="btn btn-sm" to="/live">Все трансляции →</Link>}
         />
         {data.streams?.length ? (
