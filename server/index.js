@@ -3,6 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { getDb, allMeta } from './db.js';
+import { refreshState, refreshNow, startAutoRefresh } from './refresh.js';
 import { minuteFromKickoff } from '../lib/time.js';
 
 const app = express();
@@ -141,8 +142,14 @@ app.get('/api/meta', (req, res) => {
       match_streams: one('SELECT COUNT(*) n FROM match_streams').n,
     },
     sources: meta,
+    refresh: refreshState(),
     db_populated: one('SELECT COUNT(*) n FROM matches').n > 0,
   });
+});
+
+/** Принудительное обновление трансляций и счёта (кнопка «обновить» в шапке). */
+app.post('/api/refresh', (req, res) => {
+  res.json(refreshNow({ reason: 'manual' }));
 });
 
 /* ------------------------------ overview ---------------------------- */
@@ -183,7 +190,7 @@ app.get('/api/overview', (req, res) => {
 
   const scorers = all(
     `SELECT p.name, p.nickname, t.name AS team_name, t.name_ru AS team_name_ru, t.id AS team_id,
-            sc.goals, c.name_ru AS competition_name_ru, c.accent, sc.season_id
+            sc.goals, c.name_ru AS competition_name_ru, c.accent, sc.season_id, t.crest_url AS team_crest
        FROM scorers sc
        JOIN players p ON p.id = sc.player_id
        LEFT JOIN teams t ON t.id = sc.team_id
@@ -308,7 +315,7 @@ app.get('/api/competitions/:id', (req, res) => {
     ? all(
         `SELECT st.position, st.played, st.won, st.drawn, st.lost, st.goals_for, st.goals_against,
                 st.goal_diff, st.points, t.id AS team_id, t.name AS team_name, t.name_ru AS team_name_ru,
-                t.short_name AS team_short, t.primary_color
+                t.short_name AS team_short, t.primary_color, t.crest_url
            FROM standings st JOIN teams t ON t.id = st.team_id
           WHERE st.season_id = ? ORDER BY st.position ASC`,
         [seasonId],
@@ -439,5 +446,7 @@ if (isMain) {
     console.log(`  матчей в базе: ${one('SELECT COUNT(*) n FROM matches').n}`);
     console.log(`  трансляций:    ${one('SELECT COUNT(*) n FROM streams').n} (снимок: ${meta['ingest.streams'] || '—'})`);
     if (!fs.existsSync(DIST)) console.log('  фронтенд не собран — выполните npm run build');
+    const minutes = Number(process.env.REFRESH_MINUTES || 10);
+    if (minutes > 0) startAutoRefresh({ minutes });
   });
 }

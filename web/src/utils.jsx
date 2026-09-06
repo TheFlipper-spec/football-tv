@@ -8,6 +8,8 @@ export function matchTeams(m) {
     away: m.away_name_ru || m.away_name || '—',
     homeShort: m.home_short || (m.home_name_ru || m.home_name || '?').slice(0, 3).toUpperCase(),
     awayShort: m.away_short || (m.away_name_ru || m.away_name || '?').slice(0, 3).toUpperCase(),
+    homeSrc: m.home_crest || null,
+    awaySrc: m.away_crest || null,
   };
 }
 
@@ -68,16 +70,27 @@ export function fmtViewers(n) {
   return String(n);
 }
 
-export function Crest({ name, short, color, size = '' }) {
+/**
+ * Эмблема клуба. Если в базе есть настоящая картинка (источник — репозиторий
+ * sportlogos/football.db.logos, лежит в web/public/crests), показываем её;
+ * иначе — аккуратная плашка с буквами в цветах клуба.
+ */
+export function Crest({ name, short, color, src, size = '' }) {
+  const [broken, setBroken] = useState(false);
   const letters = (short || (name || '?').slice(0, 3)).toString().toUpperCase().slice(0, 4);
+  const showImage = src && !broken;
   return (
     <div
-      className={`crest ${size}`}
+      className={`crest ${size} ${showImage ? 'crest-img' : ''}`}
       style={{ '--c1': color || '#2a3346' }}
       title={name}
       aria-hidden="true"
     >
-      {letters}
+      {showImage ? (
+        <img src={src} alt="" loading="lazy" onError={() => setBroken(true)} />
+      ) : (
+        letters
+      )}
     </div>
   );
 }
@@ -105,19 +118,34 @@ export function useTicker(intervalMs = 1000) {
   }, [intervalMs]);
 }
 
-export function useData(loader, deps = []) {
-  const [state, setState] = useState({ data: null, error: null, loading: true });
+export function useData(loader, deps = [], { intervalMs = 0 } = {}) {
+  const [state, setState] = useState({ data: null, error: null, loading: true, fetched_at: null });
   useEffect(() => {
     let alive = true;
-    setState((s) => ({ ...s, loading: true, error: null }));
-    loader()
-      .then((data) => alive && setState({ data, error: null, loading: false }))
-      .catch((error) => alive && setState({ data: null, error: String(error.message || error), loading: false }));
+    const run = (first) => {
+      if (first) setState((s) => ({ ...s, loading: true, error: null }));
+      return loader()
+        .then((data) => alive && setState({ data, error: null, loading: false, fetched_at: new Date().toISOString() }))
+        .catch((error) =>
+          alive &&
+          setState((s) => ({
+            data: s.data,                       // при ошибке не затираем то, что уже показали
+            error: String(error.message || error),
+            loading: false,
+            fetched_at: new Date().toISOString(),
+          })),
+        );
+    };
+    run(true);
+    if (!intervalMs) return () => { alive = false; };
+    // автообновление: счёт и трансляции подтягиваются сами, без перезагрузки страницы
+    const timer = setInterval(() => run(false), intervalMs);
     return () => {
       alive = false;
+      clearInterval(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  }, [...deps, intervalMs]);
   return state;
 }
 

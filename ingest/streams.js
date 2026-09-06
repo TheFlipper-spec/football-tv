@@ -208,8 +208,16 @@ function fetchSync(url) {
       .then(t => process.stdout.write(t))
       .catch(e => { process.stderr.write(String(e)); process.exit(1); });
   `;
-  return execFileSync(process.execPath, ['--input-type=commonjs', '-e', script], {
-    maxBuffer: 32 * 1024 * 1024,
-    timeout: 30000,
-  }).toString('utf8');
+  try {
+    return execFileSync(process.execPath, ['--input-type=commonjs', '-e', script], {
+      maxBuffer: 32 * 1024 * 1024,
+      timeout: 30000,
+      // stderr дочернего процесса не показываем: при отсутствии интернета он
+      // печатает «TypeError: fetch failed» на каждый URL, а вызывающий код и так
+      // сообщает, что берётся снимок
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).toString('utf8');
+  } catch (err) {
+    throw new Error(`нет доступа к ${url} (${err.code || 'offline'})`);
+  }
 }

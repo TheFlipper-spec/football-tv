@@ -44,7 +44,7 @@ export default function Matches() {
     return p;
   }, [range, competition]);
 
-  const { data, loading, error } = useData(() => api.matches(params), [range, competition]);
+  const { data, loading, error } = useData(() => api.matches(params), [range, competition], { intervalMs: 120_000 });
 
   const topCompetitions = (comps?.competitions || [])
     .filter((c) => c.matches > 0)

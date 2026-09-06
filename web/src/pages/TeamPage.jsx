@@ -18,7 +18,7 @@ export default function TeamPage() {
     <div className="fade-in">
       <div className="hero">
         <div className="row gap-8" style={{ alignItems: 'center' }}>
-          <Crest name={name} short={t.short_name} color={t.primary_color} size="crest-lg" />
+          <Crest name={name} short={t.short_name} color={t.primary_color} src={t.crest_url} size="crest-lg" />
           <div>
             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, margin: 0, letterSpacing: '-0.02em' }}>{name}</h1>
             <p className="muted small" style={{ margin: '6px 0 0' }}>

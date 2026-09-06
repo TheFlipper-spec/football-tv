@@ -12,4 +12,10 @@ export const api = {
   competition: (id, season) => api.get(`/competitions/${encodeURIComponent(id)}${season ? `?season=${encodeURIComponent(season)}` : ''}`),
   team: (id) => api.get(`/teams/${encodeURIComponent(id)}`),
   streams: (params = {}) => api.get(`/streams?${new URLSearchParams(params)}`),
+  /** Перезапуск сбора трансляций и счёта на сервере. */
+  refresh: async () => {
+    const res = await fetch('/api/refresh', { method: 'POST' });
+    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+    return res.json();
+  },
 };

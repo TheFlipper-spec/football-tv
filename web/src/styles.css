@@ -910,3 +910,54 @@ footer.foot a { color: var(--muted); text-decoration: underline; text-underline-
   .section-title { font-size: 18px; }
   .stream-grid { grid-template-columns: 1fr; }
 }
+
+/* Эмблема-картинка: фон убираем, логотип вписываем целиком */
+.crest.crest-img { background: rgba(255, 255, 255, 0.94); border-color: rgba(255, 255, 255, 0.28); }
+.crest img { width: 100%; height: 100%; object-fit: contain; padding: 9%; display: block; }
+
+/* ============================== Окно трансляции ============================== */
+
+.modal-veil {
+  position: fixed; inset: 0; z-index: 90;
+  background: rgba(6, 9, 16, 0.78);
+  backdrop-filter: blur(8px);
+  display: grid; place-items: center; padding: 20px;
+  animation: fade-in .18s ease-out;
+}
+@keyframes fade-in { from { opacity: 0 } to { opacity: 1 } }
+
+.modal {
+  width: min(720px, 100%);
+  background: linear-gradient(180deg, #161c2a, #10141f);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+}
+.modal-head { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; }
+.modal h3 { margin: 0 0 4px; font-size: 17px; line-height: 1.3; }
+.modal-close {
+  background: rgba(255, 255, 255, 0.08); color: #fff; border: 1px solid rgba(255,255,255,.14);
+  border-radius: 10px; width: 32px; height: 32px; cursor: pointer; font-size: 16px; flex: none;
+}
+.modal-close:hover { background: rgba(255, 255, 255, 0.16); }
+.modal-frame {
+  width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 14px;
+  background: #000; margin: 14px 0 0;
+}
+.modal-note {
+  margin: 14px 0 0; font-size: 13.5px; color: var(--muted); line-height: 1.55;
+}
+.modal-url {
+  margin-top: 12px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+}
+.modal-url code {
+  flex: 1 1 260px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px 10px; border-radius: 10px; font-size: 12.5px; color: #cfe0ff;
+  user-select: all;
+}
+
+/* Кнопка ручного обновления в шапке */
+.refresh-btn { margin-top: 4px; font-size: 11.5px; padding: 4px 10px; }
+.refresh-btn[disabled] { opacity: .6; cursor: progress; }

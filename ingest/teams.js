@@ -446,6 +446,7 @@ const upsertTeam = (name, extra = {}) => {
        name_ru = COALESCE(excluded.name_ru, teams.name_ru),
        short_name = COALESCE(excluded.short_name, teams.short_name),
        country = COALESCE(excluded.country, teams.country),
+       crest_url = COALESCE(excluded.crest_url, teams.crest_url),
        statsbomb_id = COALESCE(excluded.statsbomb_id, teams.statsbomb_id),
        primary_color = COALESCE(excluded.primary_color, teams.primary_color),
        updated_at = excluded.updated_at`,

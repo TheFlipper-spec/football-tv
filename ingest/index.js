@@ -27,6 +27,7 @@ import { ingestStatsbomb } from './statsbomb.js';
 import { ingestStreams, rebuildMatchStreams } from './streams.js';
 import { ingestEspn } from './espn.js';
 import { buildStandings } from './standings.js';
+import { ingestCrests } from './crests.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CACHE = path.join(ROOT, '.cache');
@@ -84,6 +85,7 @@ function summary() {
   };
   log('\n— База данных —');
   for (const [k, v] of Object.entries(counts)) log(`  ${k.padEnd(26)} ${v}`);
+  log(`  эмблем у команд:      ${getDb().prepare("SELECT COUNT(*) AS n FROM teams WHERE crest_url IS NOT NULL AND crest_url <> ''").get().n}`);
   log(`\n  файл: ${db ? process.env.FOOTBALL_DB || path.join(ROOT, 'data', 'football.db') : '?'}`);
   const meta = allMeta();
   log(`  снимок трансляций: ${meta['ingest.streams'] || '—'} (${meta['ingest.streams.mode'] || '—'})`);
@@ -117,6 +119,17 @@ try {
   if (!only) {
     step('Турнирные таблицы');
     buildStandings({ log });
+  }
+
+  if (!only || only === 'crests') {
+    step('Эмблемы клубов');
+    if (!skipClone) {
+      ensureRepo(
+        path.join(CACHE, 'football-logos'),
+        'https://github.com/sportlogos/football.db.logos.git',
+      );
+    }
+    ingestCrests({ log });
   }
 
   if (!only || only === 'streams') {

@@ -36,10 +36,18 @@ function getJson(url) {
       .then(t => process.stdout.write(t))
       .catch(e => { process.stderr.write(String(e)); process.exit(1); });
   `;
-  const out = execFileSync(process.execPath, ['--input-type=commonjs', '-e', script], {
-    maxBuffer: 64 * 1024 * 1024,
-    timeout: 30000,
-  }).toString('utf8');
+  let out;
+  try {
+    out = execFileSync(process.execPath, ['--input-type=commonjs', '-e', script], {
+      maxBuffer: 64 * 1024 * 1024,
+      timeout: 30000,
+      // без интернета дочерний процесс печатает «TypeError: fetch failed» на каждую
+      // лигу — молчим, вызывающий код возьмёт снимок и сам об этом сообщит
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).toString('utf8');
+  } catch (err) {
+    throw new Error(`нет доступа к ESPN (${err.code || 'offline'})`);
+  }
   return JSON.parse(out);
 }
 

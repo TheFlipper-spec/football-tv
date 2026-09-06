@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Crest, StatusBadge, fmtTime, fmtDayLabel, countdown, useTicker, matchTeams, fmtViewers, plural } from './utils.jsx';
 
 export function MatchRow({ m, showLeague = true }) {
   useTicker(1000);
-  const { home, away, homeShort, awayShort } = matchTeams(m);
+  const { home, away, homeShort, awayShort, homeSrc, awaySrc } = matchTeams(m);
   const hasScore = m.home_score != null && m.away_score != null;
   const soon = !hasScore && m.kickoff_utc && Date.parse(m.kickoff_utc) - Date.now() < 6 * 3600_000;
 
@@ -24,7 +24,7 @@ export function MatchRow({ m, showLeague = true }) {
       </div>
 
       <div className="match-team">
-        <Crest name={home} short={homeShort} color={m.home_color} />
+        <Crest name={home} short={homeShort} color={m.home_color} src={homeSrc} />
         <div className="grow">
           <div className="name">{home}</div>
           {showLeague && <div className="league">{m.competition_name_ru || m.competition_name}</div>}
@@ -36,7 +36,7 @@ export function MatchRow({ m, showLeague = true }) {
       </div>
 
       <div className="match-team away">
-        <Crest name={away} short={awayShort} color={m.away_color} />
+        <Crest name={away} short={awayShort} color={m.away_color} src={awaySrc} />
         <div className="grow">
           <div className="name">{away}</div>
           {showLeague && <div className="league">{m.round || m.stage || ''}</div>}
@@ -66,7 +66,101 @@ export function MatchList({ matches, empty = 'Матчей не найдено' 
   );
 }
 
+/** ID видео для встраивания в OK (там плеер работает без защитного токена). */
+function okEmbedId(url) {
+  const m = /ok\.ru\/(?:videoembed|video|live)\/(\d+)/.exec(String(url || ''));
+  return m ? m[1] : null;
+}
+
+export function StreamModal({ stream, onClose }) {
+  const okId = stream.platform === 'ok' ? okEmbedId(stream.url) : null;
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(stream.url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false); // буфер обмена недоступен — ссылка всё равно выделена
+    }
+  };
+
+  return (
+    <div className="modal-veil" onClick={onClose} role="dialog" aria-modal="true" aria-label="Трансляция">
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-head">
+          <div>
+            <span className={`badge ${stream.platform === 'ok' ? 'badge-ok' : 'badge-vk'}`}>
+              {stream.platform === 'ok' ? 'OK Видео' : 'VK Видео Live'}
+            </span>{' '}
+            {stream.is_live ? <span className="badge badge-live"><span className="dot-live" /> live</span> : null}
+            <h3>{stream.title}</h3>
+            {stream.channel && <div className="stream-channel">📡 {stream.channel}</div>}
+          </div>
+          <button type="button" className="modal-close" onClick={onClose} aria-label="Закрыть">✕</button>
+        </div>
+
+        {okId ? (
+          <iframe
+            className="modal-frame"
+            src={`https://ok.ru/videoembed/${okId}`}
+            title={stream.title}
+            allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+            allowFullScreen
+          />
+        ) : (
+          <div
+            className="modal-frame"
+            style={{ display: 'grid', placeItems: 'center', padding: 24, textAlign: 'center', color: '#93a5c4', fontSize: 14, lineHeight: 1.6 }}
+          >
+            <div>
+              <b style={{ color: '#fff' }}>Плеер VK Видео Live</b>
+              <br />
+              VK не отдаёт публичный код встраивания без защитного токена, поэтому
+              трансляция открывается на самом VK — ссылка ниже.
+            </div>
+          </div>
+        )}
+
+        <p className="modal-note">
+          Внутри предпросмотра сайт работает в песочнице браузера, и она блокирует
+          всплывающие окна — поэтому «Смотреть» открывает эфир здесь, а не в новой вкладке.
+        </p>
+
+        <div className="modal-url">
+          <code>{stream.url}</code>
+          <button type="button" className="btn btn-sm" onClick={copy}>
+            {copied ? 'Скопировано ✓' : 'Скопировать ссылку'}
+          </button>
+          <a
+            className={`btn btn-sm ${stream.platform === 'ok' ? 'btn-ok' : 'btn-vk'}`}
+            href={stream.url}
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            Открыть трансляцию
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function StreamCard({ s }) {
+  const [modal, setModal] = useState(false);
+  // Всплывающее окно может быть заблокировано — тогда показываем своё окно со ссылкой.
+  const openStream = (e) => {
+    e.preventDefault();
+    const win = window.open(s.url, '_blank', 'noopener');
+    if (!win) setModal(true);
+  };
   const isOk = s.platform === 'ok';
   const viewers = fmtViewers(s.viewers);
   const matched = s.matches?.length ? s.matches : s.match_id ? [s] : [];
@@ -101,14 +195,20 @@ export function StreamCard({ s }) {
       )}
 
       <div className="stream-actions">
-        <a className={`btn btn-sm ${isOk ? 'btn-ok' : 'btn-vk'}`} href={s.url} target="_blank" rel="noreferrer noopener">
+        <a
+          className={`btn btn-sm ${isOk ? 'btn-ok' : 'btn-vk'}`}
+          href={s.url}
+          target="_blank"
+          rel="noreferrer noopener"
+          onClick={openStream}
+        >
           {isOk ? 'Смотреть в OK' : 'Смотреть в VK'}
         </a>
-        {s.embed_url && (
-          <span className="badge" title="Встраиваемый плеер">embed</span>
-        )}
+        {s.embed_url && <span className="badge" title="Встраиваемый плеер">embed</span>}
         {s.category && <span className="badge">{s.category}</span>}
       </div>
+
+      {modal && <StreamModal stream={s} onClose={() => setModal(false)} />}
     </article>
   );
 }
@@ -143,7 +243,7 @@ export function StandingsTable({ rows }) {
               <td className="num"><span className={posClass(r.position, rows.length)}>{r.position}</span></td>
               <td>
                 <Link to={`/team/${encodeURIComponent(r.team_id)}`} className="team-cell">
-                  <Crest name={r.team_name_ru || r.team_name} short={r.team_short} color={r.primary_color} size="crest-sm" />
+                  <Crest name={r.team_name_ru || r.team_name} short={r.team_short} color={r.primary_color} src={r.crest_url} size="crest-sm" />
                   {r.team_name_ru || r.team_name}
                 </Link>
               </td>

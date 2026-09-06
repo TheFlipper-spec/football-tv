@@ -39,6 +39,7 @@ function Ticker({ overview }) {
 
 function Shell() {
   const [overview, setOverview] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const refresh = () => {
     api.overview().then(setOverview).catch(() => {});
@@ -46,12 +47,26 @@ function Shell() {
 
   useEffect(() => {
     refresh();
+    // шапка обновляется сама: счёт в эфире и список трансляций
     const id = setInterval(refresh, 60000);
     return () => clearInterval(id);
   }, []);
 
+  // Кнопка перезапускает сбор на сервере: заново обходятся VK/OK и ESPN.
+  const forceRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await api.refresh();
+    } catch {
+      /* сервер занят другим проходом — покажем то, что есть */
+    }
+    refresh();
+    setRefreshing(false);
+  };
+
   const liveCount = overview?.live?.filter((m) => m.status === 'live').length || 0;
   const captured = overview?.sources?.['ingest.streams'];
+  const refreshInfo = overview?.refresh;
 
   return (
     <>
@@ -76,7 +91,15 @@ function Shell() {
                 <div>
                   <b>{liveCount}</b> в эфире · <b>{overview.streams?.length || 0}</b> потоков
                 </div>
-                <div>{new Date(overview.now).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })} · VK Видео Live / OK Видео</div>
+                <div>
+                  {new Date(overview.now).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                  {refreshInfo?.interval_minutes
+                    ? ` · автообновление каждые ${refreshInfo.interval_minutes} мин`
+                    : ' · VK Видео Live / OK Видео'}
+                </div>
+                <button type="button" className="btn btn-sm refresh-btn" onClick={forceRefresh} disabled={refreshing}>
+                  {refreshing ? 'Обновляем…' : '⟳ Обновить'}
+                </button>
               </>
             ) : (
               <div>загрузка…</div>

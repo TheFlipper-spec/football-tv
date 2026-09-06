@@ -7,7 +7,7 @@ import { MatchList, StreamCard, SectionHead, ScorersList, Loading, ErrorBox } fr
 function Hero({ m }) {
   useTicker(1000);
   if (!m) return null;
-  const { home, away, homeShort, awayShort } = matchTeams(m);
+  const { home, away, homeShort, awayShort, homeSrc, awaySrc } = matchTeams(m);
   const hasScore = m.home_score != null && m.away_score != null;
   const top = m.streams?.[0];
 
@@ -15,7 +15,7 @@ function Hero({ m }) {
     <section className="hero fade-in">
       <div className="hero-grid">
         <div className="hero-team">
-          <Crest name={home} short={homeShort} color={m.home_color} size="crest-lg" />
+          <Crest name={home} short={homeShort} color={m.home_color} src={homeSrc} size="crest-lg" />
           <div>
             <div className="name">{home}</div>
             <div className="sub">хозяева</div>
@@ -47,7 +47,7 @@ function Hero({ m }) {
         </div>
 
         <div className="hero-team away">
-          <Crest name={away} short={awayShort} color={m.away_color} size="crest-lg" />
+          <Crest name={away} short={awayShort} color={m.away_color} src={awaySrc} size="crest-lg" />
           <div>
             <div className="name">{away}</div>
             <div className="sub">гости</div>
@@ -80,7 +80,7 @@ function Hero({ m }) {
 }
 
 export default function Home() {
-  const { data, error, loading } = useData(() => api.overview(), []);
+  const { data, error, loading } = useData(() => api.overview(), [], { intervalMs: 60_000 });
   useTicker(1000);
 
   if (loading) return <Loading />;

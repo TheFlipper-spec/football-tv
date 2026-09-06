@@ -221,7 +221,7 @@ function TvTab({ streams, match }) {
 export default function MatchPage() {
   const { id } = useParams();
   const [tab, setTab] = useState('events');
-  const { data, loading, error } = useData(() => api.match(id), [id]);
+  const { data, loading, error } = useData(() => api.match(id), [id], { intervalMs: 30_000 });
   useTicker(1000);
 
   const availableTabs = useMemo(() => {
@@ -244,7 +244,7 @@ export default function MatchPage() {
   if (error) return <ErrorBox error={error} />;
 
   const m = data.match;
-  const { home, away, homeShort, awayShort } = matchTeams(m);
+  const { home, away, homeShort, awayShort, homeSrc, awaySrc } = matchTeams(m);
   const hasScore = m.home_score != null && m.away_score != null;
 
   return (
@@ -267,7 +267,7 @@ export default function MatchPage() {
 
         <div className="match-head-grid">
           <Link to={`/team/${encodeURIComponent(m.home_id)}`} className="hero-team">
-            <Crest name={home} short={homeShort} color={m.home_color} size="crest-lg" />
+            <Crest name={home} short={homeShort} color={m.home_color} src={homeSrc} size="crest-lg" />
             <div>
               <div className="name" style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600 }}>{home}</div>
               <div className="sub muted small">{m.home_name}</div>
@@ -284,7 +284,7 @@ export default function MatchPage() {
           </div>
 
           <Link to={`/team/${encodeURIComponent(m.away_id)}`} className="hero-team away">
-            <Crest name={away} short={awayShort} color={m.away_color} size="crest-lg" />
+            <Crest name={away} short={awayShort} color={m.away_color} src={awaySrc} size="crest-lg" />
             <div>
               <div className="name" style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 600 }}>{away}</div>
               <div className="sub muted small">{m.away_name}</div>

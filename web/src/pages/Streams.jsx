@@ -15,6 +15,7 @@ export default function Streams() {
   const { data, loading, error } = useData(
     () => api.streams(filter === 'matched' ? { matched: 1 } : filter === 'all' ? {} : { platform: filter }),
     [filter],
+    { intervalMs: 60_000 },
   );
 
   const captured = data?.captured_at ? new Date(data.captured_at) : null;
