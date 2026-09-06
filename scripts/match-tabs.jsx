@@ -5,8 +5,10 @@ const virtualConsole = new VirtualConsole();
 virtualConsole.on('jsdomError', (e) => {
   if (!/Not implemented: window\.open/.test(String(e.message))) console.error(e);
 });
+// Приложение живёт на HashRouter (GitHub Pages не отдаёт index.html на
+// произвольный путь), поэтому маршрут передаётся в хеше, а не в pathname.
 const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
-  url: ORIGIN + '/match/statsbomb:3857266',
+  url: ORIGIN + '/#/match/statsbomb:3857266',
   pretendToBeVisual: true,
   virtualConsole,
 });

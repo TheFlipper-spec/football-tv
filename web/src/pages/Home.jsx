@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
-import { useData, Crest, matchTeams, fmtTime, fmtDayLabel, countdown, useTicker, plural } from '../utils.jsx';
-import { MatchList, StreamCard, SectionHead, ScorersList, Loading, ErrorBox } from '../components.jsx';
+import { useData, Crest, matchTeams, fmtTime, startsIn, useTicker, plural } from '../utils.jsx';
+import { MatchList, StreamCard, StreamModal, SectionHead, ScorersList, Loading, ErrorBox } from '../components.jsx';
 
 function Hero({ m }) {
   useTicker(1000);
+  const [watching, setWatching] = useState(false);
   if (!m) return null;
   const { home, away, homeShort, awayShort, homeSrc, awaySrc } = matchTeams(m);
   const hasScore = m.home_score != null && m.away_score != null;
@@ -40,7 +41,7 @@ function Hero({ m }) {
             ) : hasScore ? (
               <span className="badge badge-ft">матч завершён</span>
             ) : (
-              <span className="badge badge-soon">старт через {countdown(m.kickoff_utc)}</span>
+              <span className="badge badge-soon">старт {startsIn(m.kickoff_utc)}</span>
             )}
             <span className="badge">{m.competition_name_ru || m.competition_name}{m.round ? ` · ${m.round}` : ''}</span>
           </div>
@@ -68,13 +69,15 @@ function Hero({ m }) {
         </div>
         <div className="row gap-8 wrap">
           {top && (
-            <a className="btn btn-vk" href={top.url} target="_blank" rel="noreferrer noopener">
+            <button type="button" className="btn btn-vk" onClick={() => setWatching(true)}>
               ▶ Смотреть трансляцию
-            </a>
+            </button>
           )}
           <Link className="btn btn-accent" to={`/match/${encodeURIComponent(m.id)}`}>Центр матча</Link>
         </div>
       </div>
+
+      {watching && top && <StreamModal stream={top} onClose={() => setWatching(false)} />}
     </section>
   );
 }
@@ -97,7 +100,7 @@ export default function Home() {
         <SectionHead
           title="Сейчас в эфире"
           count={`${data.streams?.length || 0} потоков`}
-          sub="Прямые трансляции из VK Видео Live и OK Видео. Список привязывается к реальным матчам по названию эфира."
+          sub="Прямые трансляции из VK Видео Live, OK Видео и с сайта Матч ТВ. Список привязывается к реальным матчам по названию эфира."
           right={<Link className="btn btn-sm" to="/live">Все трансляции →</Link>}
         />
         {data.streams?.length ? (

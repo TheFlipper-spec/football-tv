@@ -56,6 +56,57 @@ export function countdown(iso) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
+/**
+ * Человеческая подпись «когда начнётся»: не даёт фраз вида «через идёт»
+ * у матча, чьё время старта уже в прошлом, а результата ещё нет.
+ */
+export function startsIn(iso) {
+  const cd = countdown(iso);
+  if (!cd) return 'время уточняется';
+  if (cd === 'идёт') return 'ожидается результат';
+  return `через ${cd}`;
+}
+
+/** Название, короткое имя и css-классы площадки эфира. */
+export function platformMeta(platform) {
+  if (platform === 'ok') {
+    return { label: 'OK Видео', short: 'OK', badge: 'badge-ok', btn: 'btn-ok', watch: 'Смотреть в OK', open: 'Открыть в OK' };
+  }
+  if (platform === 'matchtv') {
+    return { label: 'Матч ТВ', short: 'ТВ', badge: 'badge-matchtv', btn: 'btn-matchtv', watch: 'Смотреть на Матч ТВ', open: 'Открыть на matchtv.ru' };
+  }
+  return { label: 'VK Видео Live', short: 'VK', badge: 'badge-vk', btn: 'btn-vk', watch: 'Смотреть в VK', open: 'Открыть в VK' };
+}
+
+/**
+ * Ссылка встраиваемого плеера для эфира.
+ *
+ * VK Видео Live отдаёт публичный плеер по каналу — live.vkvideo.ru/app/embed/<канал>
+ * (официальный код из «Поделиться → Встроить», токен не нужен); OK Видео — по id
+ * ролика. Сервер кладёт готовую ссылку в `embed_url`, а этот помощник ещё и
+ * достраивает её из обычного url — на случай старых снимков без поля.
+ */
+export function streamEmbedUrl(s) {
+  if (!s) return null;
+  if (s.embed_url) return s.embed_url;
+  if (s.platform === 'vk') {
+    const m = /live\.vkvideo\.ru\/([^/?#]+)\/stream\//.exec(String(s.url || ''));
+    return m && m[1] !== 'app' ? `https://live.vkvideo.ru/app/embed/${m[1]}` : null;
+  }
+  if (s.platform === 'ok') {
+    const m = /ok\.ru\/(?:videoembed|video|live)\/(\d+)/.exec(String(s.url || ''));
+    return m ? `https://ok.ru/videoembed/${m[1]}` : null;
+  }
+  return null;
+}
+
+/** Тот же адрес, но с автозапуском — для плеера, открытого по явному клику. */
+export function streamEmbedSrc(s) {
+  const base = streamEmbedUrl(s);
+  if (!base) return null;
+  return s?.platform === 'vk' ? `${base}?autoplay=true` : `${base}?autoplay=1`;
+}
+
 export function plural(n, one, few, many) {
   const mod10 = n % 10;
   const mod100 = n % 100;

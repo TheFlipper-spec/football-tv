@@ -11,7 +11,7 @@ process.env.FOOTBALL_DB = tmpDb;
 const { getDb, setMeta } = await import('../server/db.js');
 const { upsertCompetition, upsertSeason } = await import('../ingest/openfootball.js');
 const { upsertTeam } = await import('../ingest/teams.js');
-const { rebuildMatchStreams } = await import('../ingest/streams.js');
+const { rebuildMatchStreams, upsertTvChannels } = await import('../ingest/streams.js');
 const { buildStandings } = await import('../ingest/standings.js');
 const { zonedToUtcIso } = await import('../lib/time.js');
 
@@ -21,12 +21,19 @@ function seed() {
     name: 'Premier League', ru: 'Английская Премьер-лига', country: 'England',
     countryRu: 'Англия', tz: 'Europe/London', tier: 1, accent: '#3d195b',
   }, '2026/27');
+  upsertCompetition('ru.1', {
+    name: 'Russian Premier League', ru: 'Российская Премьер-лига', country: 'Russia',
+    countryRu: 'Россия', tz: 'Europe/Moscow', tier: 1, accent: '#1a2f6b',
+  }, '2026/27');
   const seasonId = upsertSeason('en.1', '2026-27', 'English Premier League 2026/27');
+  const rplSeasonId = upsertSeason('ru.1', '2026-27', 'Russian Premier League 2026/27');
   const competitionId = 'openfootball:en.1';
   const everton = upsertTeam('Everton FC');
   const manutd = upsertTeam('Manchester United FC');
   const liverpool = upsertTeam('Liverpool FC');
   const chelsea = upsertTeam('Chelsea FC');
+  const zenit = upsertTeam('Zenit St. Petersburg');
+  const spartak = upsertTeam('Spartak Moskva');
 
   const insertMatch = db.prepare(
     `INSERT INTO matches (id, competition_id, season_id, round, matchday, kickoff_utc, kickoff_local, timezone,
@@ -54,11 +61,22 @@ function seed() {
     new Date().toISOString(),
   );
 
+  // Матч РПЛ через 2 часа — к нему должен привязаться эфир телеканала «Матч ТВ».
+  insertMatch.run(
+    'openfootball:ru.1:2026-27:2026-09-06:zenit-spartak',
+    'openfootball:ru.1', rplSeasonId, 'Тур 7', 7,
+    new Date(Date.now() + 2 * 3600_000).toISOString(),
+    '2026-09-06 19:30', 'Europe/Moscow', 'scheduled',
+    zenit, spartak, null, null, 'openfootball', 'ru.1/2026-27/2026-09-06/Zenit-Spartak',
+    new Date().toISOString(),
+  );
+
   db.prepare(
     `INSERT INTO streams (id, platform, category, title, channel, url, viewers, is_live, captured_at)
      VALUES ('vk:test', 'vk', 'Футбол', ?, 'ManUtdOne', 'https://live.vkvideo.ru/manutdone/stream/sl_234432', 908, 1, ?)`,
   ).run('Эвертон – Манчестер Юнайтед | ПРЯМАЯ ТРАНСЛЯЦИЯ | АПЛ', new Date().toISOString());
 
+  upsertTvChannels();
   rebuildMatchStreams({ log: () => {} });
   buildStandings({ log: () => {} });
   setMeta('ingest.streams.mode', 'snapshot');
@@ -75,14 +93,14 @@ const json = async (p) => (await fetch(base + p)).json();
 test('GET /api/meta отдаёт реальное состояние базы', async () => {
   const meta = await json('/api/meta');
   assert.equal(meta.db_populated, true);
-  assert.equal(meta.counts.matches, 2);
-  assert.equal(meta.counts.teams, 4);
-  assert.equal(meta.counts.streams, 1);
+  assert.equal(meta.counts.matches, 3);
+  assert.equal(meta.counts.teams, 6);
+  assert.equal(meta.counts.streams, 2, 'эфир матча + постоянный эфир телеканала');
 });
 
 test('GET /api/matches возвращает матчи с командами и привязанной трансляцией', async () => {
   const { matches } = await json('/api/matches');
-  assert.equal(matches.length, 2);
+  assert.equal(matches.length, 3);
   const m = matches.find((x) => x.home_name_ru === 'Эвертон');
   assert.equal(m.away_name_ru, 'Манчестер Юнайтед');
   assert.equal(m.status, 'live', 'матч со счётом, но идущий, остаётся live');
@@ -92,6 +110,18 @@ test('GET /api/matches возвращает матчи с командами и 
 
   const played = matches.find((x) => x.home_name_ru === 'Ливерпуль');
   assert.equal(played.status, 'finished');
+});
+
+test('матч РПЛ получает эфир телеканала «Матч ТВ» (метод tv-channel)', async () => {
+  const data = await json('/api/matches/openfootball:ru.1:2026-27:2026-09-06:zenit-spartak');
+  assert.equal(data.match.home_name_ru, 'Зенит');
+  assert.equal(data.streams.length, 1, 'к матчу РПЛ привязан эфир телеканала');
+  const tv = data.streams[0];
+  assert.equal(tv.platform, 'matchtv');
+  assert.equal(tv.method, 'tv-channel');
+  assert.equal(tv.channel, 'Матч ТВ');
+  assert.match(tv.url, /matchtv\.ru/);
+  assert.equal(tv.embed_url, null, 'Матч ТВ не отдаёт встраиваемый плеер — открываем на сайте канала');
 });
 
 test('GET /api/matches/:id отдаёт состав, события и трансляции', async () => {
@@ -104,9 +134,13 @@ test('GET /api/matches/:id отдаёт состав, события и тран
 
 test('GET /api/streams группирует трансляции по привязанным матчам', async () => {
   const data = await json('/api/streams');
-  assert.equal(data.streams.length, 1);
-  assert.equal(data.streams[0].matches.length, 1);
-  assert.equal(data.streams[0].matches[0].home, 'Эвертон');
+  assert.equal(data.streams.length, 2, 'эфир матча в VK + эфир телеканала «Матч ТВ»');
+  const vk = data.streams.find((s) => s.platform === 'vk');
+  assert.equal(vk.matches.length, 1);
+  assert.equal(vk.matches[0].home, 'Эвертон');
+  const tv = data.streams.find((s) => s.platform === 'matchtv');
+  assert.equal(tv.matches.length, 1);
+  assert.equal(tv.matches[0].home, 'Зенит');
   assert.equal(data.sources['ingest.streams.mode'], 'snapshot');
 });
 
@@ -125,7 +159,7 @@ test('GET /api/competitions/:id считает таблицу по сыгран�
 test('GET /api/health отвечает ok', async () => {
   const h = await json('/api/health');
   assert.equal(h.ok, true);
-  assert.equal(h.matches, 2);
+  assert.equal(h.matches, 3);
 });
 
 test('завершение', () => {

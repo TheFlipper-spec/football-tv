@@ -83,7 +83,7 @@ function Shell() {
             <span className="logo-mark"><span>⚽</span></span>
             ФУТБОЛ<em>.TV</em>
           </Link>
-          <nav className="nav">
+          <nav className="nav" aria-label="Основная навигация">
             <NavLink to="/" end>Главная</NavLink>
             <NavLink to="/live">Трансляции</NavLink>
             <NavLink to="/matches">Матчи</NavLink>
@@ -150,8 +150,9 @@ function Shell() {
               <br />
               Данные: <a href="https://github.com/openfootball" target="_blank" rel="noreferrer">openfootball</a> (календарь и результаты),{' '}
               <a href="https://github.com/statsbomb/open-data" target="_blank" rel="noreferrer">StatsBomb Open Data</a> (составы, события, статистика),{' '}
-              <a href="https://live.vkvideo.ru" target="_blank" rel="noreferrer">VK Видео Live</a> и{' '}
-              <a href="https://ok.ru/video/live" target="_blank" rel="noreferrer">OK Видео</a> (прямые эфиры),{' '}
+              <a href="https://live.vkvideo.ru" target="_blank" rel="noreferrer">VK Видео Live</a>,{' '}
+              <a href="https://ok.ru/video/live" target="_blank" rel="noreferrer">OK Видео</a> и{' '}
+              <a href="https://matchtv.ru/video/channel/matchtv" target="_blank" rel="noreferrer">Матч ТВ</a> (прямые эфиры),{' '}
               ESPN Site API (живой счёт).
             </div>
             <div style={{ textAlign: 'right' }}>
@@ -162,6 +163,14 @@ function Shell() {
           </div>
         </footer>
       </main>
+
+      {/* Нижняя навигация — только на телефонах (см. styles.css) */}
+      <nav className="bottom-nav" aria-label="Навигация">
+        <NavLink to="/" end><span className="bn-icon">🏠</span>Главная</NavLink>
+        <NavLink to="/live"><span className="bn-icon">📺</span>Эфиры</NavLink>
+        <NavLink to="/matches"><span className="bn-icon">⚽</span>Матчи</NavLink>
+        <NavLink to="/tournaments"><span className="bn-icon">🏆</span>Турниры</NavLink>
+      </nav>
     </>
   );
 }

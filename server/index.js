@@ -55,10 +55,15 @@ function decorate(matches) {
       status = 'finished';
     } else if (status !== 'live' && !hasScore && validStart) {
       const fullTime = start + 125 * 60_000;
-      if (now >= start && now < fullTime) {
-        status = 'live';
-        if (minute == null) minute = minuteFromKickoff(m.kickoff_utc);
-      }
+      if (now >= start && now < fullTime) status = 'live';
+    }
+
+    if (status !== 'live') {
+      // минута имеет смысл только у идущего матча — «финалу на 134-й минуте» тут не место
+      minute = null;
+    } else if (minute == null || minute > 120) {
+      // минуты нет или источник записал мусор — считаем от времени начала с учётом перерыва
+      minute = minuteFromKickoff(m.kickoff_utc, now);
     }
     return { ...m, status, minute };
   });
@@ -69,7 +74,7 @@ function attachStreams(matches) {
   const ids = matches.map((m) => m.id);
   const placeholders = ids.map(() => '?').join(',');
   const rows = all(
-    `SELECT ms.match_id, s.platform, s.title, s.channel, s.url, s.viewers, s.captured_at
+    `SELECT ms.match_id, s.id, s.platform, s.title, s.channel, s.url, s.embed_url, s.viewers, s.is_live, s.captured_at
        FROM match_streams ms JOIN streams s ON s.id = ms.stream_id
       WHERE ms.match_id IN (${placeholders})
       ORDER BY ms.score DESC, s.viewers DESC`,
@@ -90,9 +95,22 @@ const SEASON_UPCOMING_WINDOW = 20;
 function listMatches(params, limit = 200) {
   const where = [];
   const values = [];
-  if (params.status) {
+  /*
+   * Статус матча — производная величина: decorate() переводит запланированный
+   * матч в live по времени начала и глушит устаревшие live-статусы. Поэтому
+   * фильтр по статусу применяется ПОСЛЕ decorate, а в SQL мы лишь сужаем окно:
+   * live-кандидаты — это матчи без итогового счёта вокруг текущего времени
+   * плюс те, кого live-источник уже пометил.
+   */
+  const statusFilter = params.status || null;
+  if (statusFilter === 'live') {
+    where.push(`(m.status = 'live' OR (m.home_score IS NULL AND m.kickoff_utc IS NOT NULL
+      AND m.kickoff_utc >= datetime('now', '-4 hours') AND m.kickoff_utc <= datetime('now', '+1 minute')))`);
+  } else if (statusFilter === 'finished') {
+    where.push("(m.status = 'finished' OR m.home_score IS NOT NULL)");
+  } else if (statusFilter) {
     where.push('m.status = ?');
-    values.push(params.status);
+    values.push(statusFilter);
   }
   if (params.competition) {
     where.push('m.competition_id = ?');
@@ -127,7 +145,9 @@ function listMatches(params, limit = 200) {
   const order = params.order === 'desc' ? 'DESC' : 'ASC';
   const sql = `${MATCH_SELECT} ${where.length ? `WHERE ${where.join(' AND ')}` : ''}
     ORDER BY m.kickoff_utc IS NULL, m.kickoff_utc ${order} LIMIT ?`;
-  return decorate(all(sql, [...values, limit]));
+  const rows = decorate(all(sql, [...values, limit]));
+  // после decorate статус мог измениться — дофильтровываем по производному статусу
+  return statusFilter ? rows.filter((m) => m.status === statusFilter) : rows;
 }
 
 /* ------------------------------- meta ------------------------------- */
@@ -474,6 +494,12 @@ app.get('/api/health', (req, res) => {
 });
 
 /* ------------------------------- static ----------------------------- */
+
+// Эмблемы лежат в web/public и попадают в dist при сборке. Раздаём их и из
+// исходного каталога: dev-сервер Vite и смоук-тест ходят за ними прямо в API,
+// а фронтенд может быть ещё не собран.
+const PUBLIC_CRESTS = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', 'web', 'public', 'crests');
+if (fs.existsSync(PUBLIC_CRESTS)) app.use('/crests', express.static(PUBLIC_CRESTS));
 
 if (fs.existsSync(DIST)) {
   app.use(express.static(DIST, { index: false }));

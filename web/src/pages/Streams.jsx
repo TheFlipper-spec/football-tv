@@ -7,6 +7,7 @@ const FILTERS = [
   { id: 'all', label: 'Все площадки' },
   { id: 'vk', label: 'VK Видео Live' },
   { id: 'ok', label: 'OK Видео' },
+  { id: 'matchtv', label: 'Матч ТВ' },
   { id: 'matched', label: 'Привязанные к матчам' },
 ];
 
@@ -25,7 +26,7 @@ export default function Streams() {
       <SectionHead
         title="Прямые трансляции"
         count={data?.streams?.length}
-        sub="Эфиры собираются из категории «Футбол» на live.vkvideo.ru и из раздела прямых эфиров OK Видео, затем сопоставляются с матчами из базы по названию трансляции."
+        sub="Эфиры собираются из категории «Футбол» на live.vkvideo.ru, из раздела прямых эфиров OK Видео и из календаря трансляций matchtv.ru, затем сопоставляются с матчами из базы по названию трансляции."
       />
 
       <div className="chips" style={{ marginBottom: 16 }}>
