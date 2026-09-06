@@ -3,6 +3,21 @@
 import { JSDOM, VirtualConsole } from 'jsdom';
 
 const ORIGIN = process.env.ORIGIN || 'http://127.0.0.1:8080';
+// Адрес самой страницы. Для проверки статической копии (npm run test:smoke:static)
+// это http://127.0.0.1:8090/football-tv/ — тогда снимок ищется в /football-tv/data/.
+const PAGE_URL = process.env.PAGE_URL || `${ORIGIN}/`;
+// STATIC=1 — проверяем копию для GitHub Pages: роутов /api там нет вовсе,
+// данные читаются из JSON-снимка в <база>/data/.
+const STATIC = process.env.STATIC === '1';
+const dataUrl = (rel) => `${PAGE_URL.replace(/\/$/, '')}/data/${rel}.json`;
+
+/** Один и тот же запрос к живому API или к его статическому двойнику. */
+async function apiGet(route, snapshotRel) {
+  const url = STATIC ? dataUrl(snapshotRel) : ORIGIN + route;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`${url} → ${res.status}`);
+  return res.json();
+}
 
 // jsdom не реализует window.open и пишет об этом в консоль — нам как раз нужен
 // его «не открылось», чтобы проверить запасной путь. Шум глушим.
@@ -12,7 +27,7 @@ virtualConsole.on('jsdomError', (e) => {
 });
 
 const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
-  url: ORIGIN + '/',
+  url: PAGE_URL,
   pretendToBeVisual: true,
   virtualConsole,
 });
@@ -33,6 +48,7 @@ global.CustomEvent = window.CustomEvent;
 global.MouseEvent = window.MouseEvent;
 global.KeyboardEvent = window.KeyboardEvent;
 global.PopStateEvent = window.PopStateEvent;
+global.HashChangeEvent = window.HashChangeEvent;
 global.getComputedStyle = window.getComputedStyle;
 global.requestAnimationFrame = window.requestAnimationFrame;
 global.cancelAnimationFrame = window.cancelAnimationFrame;
@@ -79,8 +95,12 @@ const expect = (cond, label) => {
 };
 
 async function visit(path, waitMs = 900) {
+  // Приложение работает на HashRouter: на GitHub Pages нет сервера, который
+  // отдал бы index.html на произвольный путь. Маршрут живёт в хеше, а
+  // createHashHistory из @remix-run/router слушает только popstate — поэтому
+  // меняем хеш и диспатчим именно popstate (hashchange он не слушает вовсе).
   await act(async () => {
-    window.history.pushState({}, '', path);
+    window.history.pushState({}, '', `#${path}`);
     window.dispatchEvent(new window.PopStateEvent('popstate'));
   });
   await settle(waitMs);
@@ -93,7 +113,7 @@ console.log(`  /                    ${home.text.length} символов тек�
 expect(home.text.includes('Эвертон'), '/ — живой матч Эвертон — Манчестер Юнайтед');
 expect(/трансляц/i.test(home.text), '/ — блок трансляций');
 expect(home.html.includes('vkvideo.ru'), '/ — ссылки на эфиры VK Видео Live в контенте');
-expect(home.html.includes('src="/crests/'), '/ — на главной видны эмблемы клубов');
+expect(home.html.includes('/crests/'), '/ — на главной видны эмблемы клубов');
 
 const matches = await visit('/matches');
 console.log(`  /matches             ${matches.text.length} символов текста`);
@@ -117,7 +137,7 @@ console.log(`  /tournament/…en.1    ${tour.text.length} символов те�
 expect(/Манчестер Сити/.test(tour.text), '/tournament/…en.1 — таблица АПЛ рассчитана');
 expect(/Оренбург|Бомбардир|Голы/i.test(tour.text), '/tournament/…en.1 — блоки таблицы/бомбардиров');
 
-const overview = await (await fetch(ORIGIN + '/api/overview')).json();
+const overview = await apiGet('/api/overview', 'overview');
 const match = await visit('/match/' + overview.featured.id, 1200);
 console.log(`  /match/<featured>    ${match.text.length} символов текста`);
 expect(/Эвертон/.test(match.text) && /Манчестер Юнайтед/.test(match.text), '/match — карточка матча');
@@ -128,7 +148,9 @@ console.log(`  /team/everton        ${team.text.length} символов тек�
 expect(/Эвертон/.test(team.text), '/team/everton — страница клуба');
 
 // --- эмблемы: картинка в DOM и она реально отдаётся сервером ---
-const imgs = [...document.querySelectorAll('main img[src^="/crests/"]')].map((i) => i.getAttribute('src'));
+const imgs = [...document.querySelectorAll('main img')]
+  .map((i) => i.getAttribute('src'))
+  .filter((src) => src && src.includes('/crests/'));
 expect(imgs.length > 0, 'эмблемы клубов отрисованы как <img>');
 if (imgs.length) {
   const probe = await fetch(ORIGIN + imgs[0]);
@@ -155,11 +177,21 @@ if (watch) {
   }
 }
 
-// --- автообновление: серверный refresh и поле в meta ---
-const meta = await (await fetch(ORIGIN + '/api/meta')).json();
-expect(!!meta.refresh && meta.refresh.interval_minutes > 0, 'автообновление включено на сервере');
-const refreshed = await (await fetch(ORIGIN + '/api/refresh', { method: 'POST' })).json();
-expect(refreshed.runs >= 1 && !refreshed.last_error, `POST /api/refresh прошёл (${refreshed.streams} трансляций, ${refreshed.matched} связей, режим ${refreshed.streams_mode})`);
+// --- автообновление ---
+if (STATIC) {
+  // На GitHub Pages сервера нет: обновляет данные сборка сайта. Проверяем,
+  // что снимок это честно сообщает, а не обещает запросы в браузере.
+  const manifest = await apiGet(null, 'manifest');
+  expect(manifest.mode === 'static' && !!manifest.generated_at, `снимок помечен как static (собран ${manifest.generated_at})`);
+  const headerText = (document.querySelector('header')?.textContent || '').replace(/\s+/g, ' ');
+  expect(/снимок данных от/i.test(headerText), 'шапка говорит, что это снимок данных, а не live');
+  expect(/Перечитать/.test(headerText), 'кнопка обновления в статическом режиме называется «Перечитать»');
+} else {
+  const meta = await apiGet('/api/meta', 'meta');
+  expect(!!meta.refresh && meta.refresh.interval_minutes > 0, 'автообновление включено на сервере');
+  const refreshed = await (await fetch(ORIGIN + '/api/refresh', { method: 'POST' })).json();
+  expect(refreshed.runs >= 1 && !refreshed.last_error, `POST /api/refresh прошёл (${refreshed.streams} трансляций, ${refreshed.matched} связей, режим ${refreshed.streams_mode})`);
+}
 
 // --- вкладки матча: события, составы, статистика должны РЕАЛЬНО рендериться ---
 const clickTab = async (label) => {
@@ -191,13 +223,18 @@ expect(plain.html.includes('goal-chip'), 'авторы голов оформле
 const fStats = await clickTab('Статистика');
 expect(fStats && /Владение/.test(fStats) && /Удары в створ/.test(fStats), 'Статистика матча АПЛ: владение и удары из live-слоя');
 // матч БЕЗ протокола берём отдельный: у featured теперь есть события из live-слоя
-const noDepth = (await (await fetch(ORIGIN + '/api/matches?limit=400')).json()).matches
+const noDepth = (await apiGet('/api/matches?limit=400', 'matches-index')).matches
   .find((m) => !m.has_events && !m.has_lineups && !m.has_stats);
 if (noDepth) {
   await visit('/match/' + noDepth.id, 1200);
   const emptyTab = await clickTab('События');
   expect(emptyTab && /StatsBomb/.test(emptyTab), 'пустая вкладка объясняет, откуда берутся протоколы');
-  expect(!!document.querySelector('main a[href="/matches"]'), 'из пустой вкладки есть переход к матчам с протоколом');
+  // HashRouter рисует href="#/matches" — проверяем оба варианта, чтобы тест
+  // не зависел от типа роутера.
+  expect(
+    !!document.querySelector('main a[href="#/matches"], main a[href="/matches"]'),
+    'из пустой вкладки есть переход к матчам с протоколом',
+  );
 }
 
 // на главной раздел «Матчи с протоколом» должен быть виден

@@ -14,7 +14,11 @@ export default function TournamentPage() {
 
   const c = data.competition;
   const activeSeason = data.seasonId;
-  const played = data.matches.filter((m) => m.status === 'finished').length;
+  // Сервер отдаёт не весь сезон, а окно из последних результатов и ближайших
+  // матчей, поэтому считаем по полным счётчикам (matches_total / played_total).
+  // Если их нет — считаем по массиву, как раньше.
+  const total = data.matches_total ?? data.matches.length;
+  const played = data.played_total ?? data.matches.filter((m) => m.status === 'finished').length;
   const upcoming = data.matches.filter((m) => m.home_score == null).slice(0, 12);
   const results = data.matches.filter((m) => m.home_score != null).slice(0, 16);
 
@@ -28,7 +32,7 @@ export default function TournamentPage() {
               {c.name_ru || c.name}
             </h1>
             <p className="muted small" style={{ margin: 0 }}>
-              {c.name} · {data.matches.length} {plural(data.matches.length, 'матч', 'матча', 'матчей')} · сыграно {played}
+              {c.name} · {total} {plural(total, 'матч', 'матча', 'матчей')} · сыграно {played}
             </p>
           </div>
         </div>

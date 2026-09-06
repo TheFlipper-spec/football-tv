@@ -71,6 +71,24 @@ export function fmtViewers(n) {
 }
 
 /**
+ * Путь к файлу из сборки.
+ *
+ * В базе эмблемы хранятся как `/crests/…` — от корня домена. На GitHub Pages
+ * сайт живёт в подкаталоге `/football-tv/`, и корневой путь уехал бы в 404,
+ * поэтому дополняем его базой сборки. Внешние ссылки (http/https) не трогаем.
+ */
+const ASSET_BASE = (() => {
+  const env = import.meta.env?.BASE_URL;
+  if (!env) return '';
+  return env.endsWith('/') ? env.slice(0, -1) : env;
+})();
+
+export function assetUrl(src) {
+  if (!src || !src.startsWith('/') || !ASSET_BASE) return src;
+  return `${ASSET_BASE}${src}`;
+}
+
+/**
  * Эмблема клуба. Если в базе есть настоящая картинка (источник — репозиторий
  * sportlogos/football.db.logos, лежит в web/public/crests), показываем её;
  * иначе — аккуратная плашка с буквами в цветах клуба.
@@ -87,7 +105,7 @@ export function Crest({ name, short, color, src, size = '' }) {
       aria-hidden="true"
     >
       {showImage ? (
-        <img src={src} alt="" loading="lazy" onError={() => setBroken(true)} />
+        <img src={assetUrl(src)} alt="" loading="lazy" onError={() => setBroken(true)} />
       ) : (
         letters
       )}
